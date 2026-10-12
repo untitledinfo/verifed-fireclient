@@ -1,11 +1,11 @@
-FireClient Signing Fix v3
+FireClient Signing Fix v4
 ========================
 
 Replace these files in your GitHub repository:
 - scripts/Sign-And-Generate-Yml.ps1
 - .github/workflows/sign-release.yml
 
-This version removes multiline here-strings used directly as function arguments, changes the latest.yml hash error string to a double-quoted literal, and adds a PowerShell AST syntax check before the signing script runs. This makes a future syntax problem fail early with the precise parser message.
+This version keeps the PowerShell AST syntax check and uses a round-trip ISO-8601 (`o`) date format string for releaseDate, avoiding nested quote characters. Commit both replacement files, then rerun the workflow and verify the syntax-validation step passes before signing.
 
 Keep repository secrets:
 - WINDOWS_CERTIFICATE_BASE64

@@ -193,7 +193,7 @@ try {
     $sha.Dispose()
 }
 $size = (Get-Item -LiteralPath $distExe).Length
-$releaseDate = [DateTime]::UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'")
+$releaseDate = [DateTime]::UtcNow.ToString('o')
 $version = $env:RELEASE_VERSION
 
 # Modern electron-updater files[] format. This YAML contains a SHA-512 integrity
