@@ -1,0 +1,7 @@
+# Local outputs and private signing material
+dist/
+*.pfx
+*.p12
+*.pem
+*.key
+.env
