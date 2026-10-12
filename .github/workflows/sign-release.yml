@@ -18,7 +18,7 @@ permissions:
 jobs:
   sign-and-release:
     runs-on: windows-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -43,33 +43,46 @@ jobs:
       - name: Validate PowerShell script syntax
         shell: pwsh
         run: |
-          $tokens = $null
-          $parseErrors = $null
-          [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD 'scripts/Sign-And-Generate-Yml.ps1'), [ref]$tokens, [ref]$parseErrors) | Out-Null
-          if ($parseErrors.Count -gt 0) {
-            $parseErrors | ForEach-Object { Write-Error ("PowerShell parse error at {0}: {1}" -f $_.Extent.StartLineNumber, $_.Message) }
-            exit 1
+          $files = @(
+            (Join-Path $PWD 'scripts/Sign-And-Generate-Yml.ps1'),
+            (Join-Path $PWD 'scripts/Verify-Windows-Release.ps1')
+          )
+          foreach ($file in $files) {
+            $tokens = $null
+            $parseErrors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($file, [ref]$tokens, [ref]$parseErrors) | Out-Null
+            if ($parseErrors.Count -gt 0) {
+              $parseErrors | ForEach-Object { Write-Error ("PowerShell parse error in {0} at line {1}: {2}" -f $file, $_.Extent.StartLineNumber, $_.Message) }
+              exit 1
+            }
+            Write-Host "Syntax passed: $file"
           }
-          Write-Host 'Signing script syntax validation passed.'
 
-      - name: Sign executable, verify signature, and generate latest.yml
+      - name: Sign executable and generate latest.yml
         shell: pwsh
         env:
           WINDOWS_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_CERTIFICATE_BASE64 }}
           WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
-          # TEST RELEASES ONLY: this allows verification to proceed only for this
-          # exact pinned development certificate on the disposable CI runner.
+          # TEST RELEASES ONLY: never presents the self-signed cert as trusted.
           ALLOW_UNTRUSTED_SELF_SIGNED_CERTIFICATE: 'true'
           EXPECTED_SIGNING_CERT_THUMBPRINT: 'BDF35D4B69863EB70590708C44D11E18C12AF2C5'
         run: ./scripts/Sign-And-Generate-Yml.ps1
 
+      - name: Report publisher identity and scan installer with Microsoft Defender
+        shell: pwsh
+        env:
+          ALLOW_UNTRUSTED_SELF_SIGNED_CERTIFICATE: 'true'
+          EXPECTED_SIGNING_CERT_THUMBPRINT: 'BDF35D4B69863EB70590708C44D11E18C12AF2C5'
+        run: ./scripts/Verify-Windows-Release.ps1
+
       - name: Upload release files as workflow artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: FireClient-signed-release-${{ env.RELEASE_VERSION }}
+          name: FireClient-release-${{ env.RELEASE_VERSION }}
           path: |
             dist/FireClient-Setup.exe
             dist/latest.yml
+            dist/verification-report.json
           if-no-files-found: error
           retention-days: 30
 
@@ -83,3 +96,4 @@ jobs:
           files: |
             dist/FireClient-Setup.exe
             dist/latest.yml
+            dist/verification-report.json

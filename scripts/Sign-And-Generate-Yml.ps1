@@ -131,7 +131,7 @@ Copy-Item -LiteralPath $sourceExe -Destination $distExe -Force
 
 Write-Host 'Stage 5/5: Signing installer.'
 Write-Host "Signing installer with certificate subject: $subject"
-& $signtool.FullName sign /fd SHA256 /tr 'http://timestamp.digicert.com' /td SHA256 /f $certPath /p $env:WINDOWS_CERTIFICATE_PASSWORD /d 'FireClient' /du 'https://www.fireclient.net' $distExe
+& $signtool.FullName sign /fd SHA256 /tr 'http://timestamp.digicert.com' /td SHA256 /f $certPath /p $env:WINDOWS_CERTIFICATE_PASSWORD /d 'FireClient Launcher' /du 'https://www.fireclient.net' $distExe
 if ($LASTEXITCODE -ne 0) {
     Stop-WithError "SignTool sign failed with exit code $LASTEXITCODE."
 }

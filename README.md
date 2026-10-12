@@ -1,15 +1,30 @@
-# FireClient Signing Fix v8
+# FireClient Windows Security Features (v9)
 
-## Cause
-The script is intentionally allowed to continue for a very narrow test-only case: SignTool verifies the timestamp but returns exit code 1 solely because the exact pinned self-signed development certificate is not trusted by Windows. GitHub Actions' PowerShell wrapper propagates the leftover native `$LASTEXITCODE`, so the step can generate `latest.yml` and still fail at the end.
+This update adds a Windows release-security check to the working signing workflow:
 
-## Apply
-1. Download and extract this ZIP.
-2. In `untitledinfo/verifed-fireclient`, open `scripts/Sign-And-Generate-Yml.ps1`.
-3. Replace the full file with the included version and commit it to `main`.
-4. Re-run **Sign FireClient Setup and Publish**.
+- Signs the installer with a more descriptive Authenticode description: `FireClient Launcher`.
+- Reports the embedded publisher display name, organization, certificate subject, thumbprint, and Windows Authenticode trust status.
+- Runs an on-demand Microsoft Defender custom scan against the signed `dist/FireClient-Setup.exe` before release publication.
+- Fails the release if Defender is unavailable, reports a scan error, or returns a non-zero scan result.
+- Writes `dist/verification-report.json` with the signed EXE's SHA-256/SHA-512, publisher identity, trust state, and Defender scan result; uploads it as a GitHub artifact and release asset.
+- Runs PowerShell syntax validation on both scripts before attempting to sign.
 
-No GitHub secret changes are required. The current workflow already supplies the test-only flag and expected thumbprint.
+## Important trust limitation
 
-## Security limitation
-This permits metadata generation only for the specifically pinned self-signed development certificate when the script sees exactly the expected untrusted-root error and a timestamp. It does not make FireClient a trusted publisher on end-user Windows PCs. For a production release, use a certificate issued by a Windows-trusted code-signing CA and remove the test-only fallback.
+The currently configured FireClient certificate thumbprint (`BDF35D4B69863EB70590708C44D11E18C12AF2C5`) is a self-signed test certificate. This workflow can report its certificate identity and scan the installer, but must not label it as a Windows Verified Publisher. The published report will explicitly state when the Windows trust status is not `Valid`. Changing `/d` changes the Authenticode description shown for the signed program; it does not change the certificate's publisher identity or make Windows trust the certificate.
+
+For genuine Verified Publisher status, replace the test certificate with a valid code-signing certificate issued to the actual legal entity by a CA trusted by Windows, then remove the test-only fallback and thumbprint pin from the workflow. SmartScreen reputation can still take time to develop even after using a trusted certificate. See Microsoft guidance:
+
+- https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/code-signing-options
+- https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/smartscreen-reputation
+- https://learn.microsoft.com/en-us/defender-endpoint/command-line-arguments-microsoft-defender-antivirus
+
+## Install the changes
+
+Replace these files in your repository with the matching files from this ZIP, commit to `main`, and run **Sign FireClient Setup and Publish**:
+
+- `.github/workflows/sign-release.yml`
+- `scripts/Sign-And-Generate-Yml.ps1`
+- `scripts/Verify-Windows-Release.ps1` (new file)
+
+No certificate secret changes are required for the current test-only workflow. Do not commit a PFX or certificate password to the repository.
