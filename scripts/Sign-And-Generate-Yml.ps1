@@ -9,8 +9,8 @@ function Stop-WithError([string]$Message) {
 if ([string]::IsNullOrWhiteSpace($env:WINDOWS_CERTIFICATE_BASE64)) {
     Stop-WithError 'Missing GitHub Actions secret WINDOWS_CERTIFICATE_BASE64. Add a valid code-signing PFX certificate as a Base64 secret.'
 }
-if ($null -eq $env:WINDOWS_CERTIFICATE_PASSWORD) {
-    Stop-WithError 'Missing GitHub Actions secret WINDOWS_CERTIFICATE_PASSWORD.'
+if ([string]::IsNullOrWhiteSpace($env:WINDOWS_CERTIFICATE_PASSWORD)) {
+    Stop-WithError 'WINDOWS_CERTIFICATE_PASSWORD is missing or empty. Set it to the exact password used to export the PFX; do not use your GitHub or Windows login password.'
 }
 if ([string]::IsNullOrWhiteSpace($env:RELEASE_VERSION) -or $env:RELEASE_VERSION -notmatch '^\d+\.\d+\.\d+([+-][0-9A-Za-z.-]+)?$') {
     Stop-WithError "RELEASE_VERSION is missing or invalid: '$env:RELEASE_VERSION'"
@@ -52,14 +52,25 @@ if ($pfxBytes.Length -lt 128 -or $pfxBytes[0] -ne 0x30) {
 }
 [IO.File]::WriteAllBytes($certPath, $pfxBytes)
 
-$securePassword = ConvertTo-SecureString $env:WINDOWS_CERTIFICATE_PASSWORD -AsPlainText -Force
 try {
-    $certificate = Get-PfxCertificate -FilePath $certPath -Password $securePassword
+    # Use .NET's explicit PFX import to validate the private key and surface a
+    # more useful underlying error than Get-PfxCertificate's generic message.
+    $pfxFlags = [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
+    $certificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
+        [byte[]]$pfxBytes,
+        [string]$env:WINDOWS_CERTIFICATE_PASSWORD,
+        $pfxFlags
+    )
 } catch {
-    Stop-WithError 'Could not open the PFX certificate. Check the certificate file and password.'
+    $reason = $_.Exception.Message
+    Stop-WithError @"
+Could not open the PFX certificate. Most commonly WINDOWS_CERTIFICATE_PASSWORD is not the exact password used when the PFX was exported, or this PFX is damaged/incompatible. Re-export the certificate from its provider or run scripts/Repair-Certificate-Secret.ps1 locally if the matching private key is installed in Windows. Underlying import error: $reason
+"@
 }
 
 $subject = [string]$certificate.Subject
+$issuer = [string]$certificate.Issuer
+$certificateThumbprint = ([string]$certificate.Thumbprint -replace '\s', '').ToUpperInvariant()
 if ($subject -notmatch '(?i)(CN\s*=\s*FireClient LLC|O\s*=\s*FireClient LLC)') {
     Stop-WithError "Certificate subject is '$subject', not a certificate identifying FireClient LLC. Use the correct organization code-signing certificate."
 }
@@ -70,6 +81,7 @@ $now = Get-Date
 if ($certificate.NotBefore -gt $now -or $certificate.NotAfter -lt $now) {
     Stop-WithError "Certificate is not currently valid. Valid from $($certificate.NotBefore) through $($certificate.NotAfter)."
 }
+if ($certificate -is [System.IDisposable]) { $certificate.Dispose() }
 
 $sdkBin = Join-Path ${env:ProgramFiles(x86)} 'Windows Kits/10/bin'
 $signtool = Get-ChildItem -LiteralPath $sdkBin -Filter signtool.exe -Recurse -ErrorAction SilentlyContinue |
@@ -90,9 +102,46 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host 'Verifying Authenticode signature...'
-& $signtool.FullName verify /pa /all /v $distExe
-if ($LASTEXITCODE -ne 0) {
-    Stop-WithError "SignTool verification failed with exit code $LASTEXITCODE."
+$verifyOutput = @(& $signtool.FullName verify /pa /all /v $distExe 2>&1)
+$verifyExitCode = $LASTEXITCODE
+$verifyText = (($verifyOutput -join "`n") -replace '\s+', ' ')
+$verifyOutput | ForEach-Object { Write-Host $_ }
+
+if ($verifyExitCode -ne 0) {
+    # A self-signed developer certificate can create a mathematically valid
+    # Authenticode signature, but Windows cannot build a trusted publisher
+    # chain. Permit this ONLY when the workflow explicitly opts in, the signer
+    # exactly matches the PFX certificate and its pinned thumbprint, and the
+    # only reported verification problem is the untrusted self-signed root.
+    # This is a build/metadata workaround, NOT trusted-publisher verification.
+    $allowSelfSigned = $env:ALLOW_UNTRUSTED_SELF_SIGNED_CERTIFICATE -eq 'true'
+    $expectedThumbprint = ([string]$env:EXPECTED_SIGNING_CERT_THUMBPRINT -replace '\s', '').ToUpperInvariant()
+    $authenticode = Get-AuthenticodeSignature -FilePath $distExe
+    $actualSignerThumbprint = ''
+    if ($null -ne $authenticode.SignerCertificate) {
+        $actualSignerThumbprint = ([string]$authenticode.SignerCertificate.Thumbprint -replace '\s', '').ToUpperInvariant()
+    }
+    $onlyUntrustedRoot = $verifyText -match '(?i)A certificate chain processed, but terminated in a root certificate which is not trusted by the trust provider'
+    $selfSignedCertificate = $issuer -eq $subject
+    $signerMatchesPfx = $actualSignerThumbprint -eq $certificateThumbprint
+    $thumbprintIsPinned = -not [string]::IsNullOrWhiteSpace($expectedThumbprint) -and $actualSignerThumbprint -eq $expectedThumbprint
+    $timestampPresent = $verifyText -match '(?i)The signature is timestamped' -and $verifyText -match '(?i)Timestamp Verified by:'
+    $signatureStatusAllowsFallback = ([string]$authenticode.Status -eq 'NotTrusted') -and ($authenticode.StatusMessage -match '(?i)not trusted|untrusted root')
+
+    if ($allowSelfSigned -and $onlyUntrustedRoot -and $selfSignedCertificate -and $signerMatchesPfx -and $thumbprintIsPinned -and $timestampPresent -and $signatureStatusAllowsFallback) {
+        Write-Warning 'The installer has an Authenticode signature and a verified timestamp, but its self-signed publisher certificate is NOT trusted by Windows.'
+        Write-Warning 'Continuing only because ALLOW_UNTRUSTED_SELF_SIGNED_CERTIFICATE=true and the exact signer thumbprint is pinned. Windows will not show FireClient LLC as a trusted Verified Publisher.'
+        Write-Warning 'For production, replace this self-signed certificate with a publicly trusted code-signing certificate and disable the self-signed fallback.'
+    } else {
+        Stop-WithError @"
+SignTool verification failed with exit code $verifyExitCode. Refusing to publish unless the ONLY error is an untrusted self-signed root and the signer exactly matches the pinned certificate.
+Signer status: $($authenticode.Status) - $($authenticode.StatusMessage)
+PFX certificate thumbprint: $certificateThumbprint
+Actual signer thumbprint: $actualSignerThumbprint
+Expected pinned thumbprint: $expectedThumbprint
+Fallback enabled: $allowSelfSigned
+"@
+    }
 }
 
 # Generate the updater checksum only AFTER signing; Authenticode changes the EXE bytes.
@@ -126,7 +175,7 @@ if ($check -ne $sha512) {
     Stop-WithError 'Generated latest.yml hash verification failed.'
 }
 
-Write-Host "Successfully signed and verified: $distExe"
+Write-Host "Installer signature checked; generated updater metadata for: $distExe"
 Write-Host "Generated updater metadata: $latestYml"
 Write-Host "Version: $version | Size: $size bytes | SHA-512: $sha512"
 Remove-Item -LiteralPath $certPath -Force -ErrorAction SilentlyContinue
