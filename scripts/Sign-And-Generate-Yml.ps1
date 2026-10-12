@@ -83,59 +83,24 @@ if ($certificate.NotBefore -gt $now -or $certificate.NotAfter -lt $now) {
     Stop-WithError "Certificate is not currently valid. Valid from $($certificate.NotBefore) through $($certificate.NotAfter)."
 }
 
-# The supplied workflow log identifies a self-signed development certificate.
-# SignTool correctly rejects that chain on a clean GitHub runner. For build-only
-# testing, temporarily trust ONLY this exact pinned self-signed certificate in
-# the current user's root store. This trust exists only on the ephemeral runner;
-# it does not make the EXE trusted on users' PCs or create a Verified Publisher.
-$temporaryRootCertificateAdded = $false
+# Do not open or modify the Windows certificate stores in CI. Store access can
+# block on hosted runners. Instead, validate the pinned test certificate here,
+# then permit only the narrowly scoped SignTool untrusted-root fallback below.
 $allowSelfSigned = $env:ALLOW_UNTRUSTED_SELF_SIGNED_CERTIFICATE -eq 'true'
 $expectedThumbprint = ([string]$env:EXPECTED_SIGNING_CERT_THUMBPRINT -replace '\s', '').ToUpperInvariant()
+$certificateThumbprint = ([string]$certificate.Thumbprint -replace '\s', '').ToUpperInvariant()
 
-# The observed FireClient development certificate reports the signer name as
-# "FireClient" while its full subject also contains O=FireClient LLC and C=US.
-# Comparing the complete Subject and Issuer strings therefore is not a reliable
-# self-signed test. In this workflow, trust is allowed ONLY when the actual PFX
-# thumbprint exactly matches the hard-pinned value and the opt-in is enabled.
-Write-Host 'Stage 3/5: Checking certificate trust configuration.'
+Write-Host 'Stage 3/5: Checking pinned certificate configuration without touching the Windows trust store.'
 if ($allowSelfSigned) {
     if ([string]::IsNullOrWhiteSpace($expectedThumbprint) -or $certificateThumbprint -ne $expectedThumbprint) {
-        Stop-WithError "Refusing to trust certificate thumbprint $certificateThumbprint because it does not exactly match EXPECTED_SIGNING_CERT_THUMBPRINT."
+        Stop-WithError "Refusing test release: PFX thumbprint $certificateThumbprint does not match EXPECTED_SIGNING_CERT_THUMBPRINT."
     }
-
-    $publicCert = $null
-    $rootStore = $null
-    try {
-        $publicCertBytes = $certificate.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Cert)
-        $publicCert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new([byte[]]$publicCertBytes)
-        $rootStore = [System.Security.Cryptography.X509Certificates.X509Store]::new(
-            [System.Security.Cryptography.X509Certificates.StoreName]::Root,
-            [System.Security.Cryptography.X509Certificates.StoreLocation]::CurrentUser
-        )
-        $rootStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
-        $alreadyTrusted = $rootStore.Certificates.Find(
-            [System.Security.Cryptography.X509Certificates.X509FindType]::FindByThumbprint,
-            $certificateThumbprint,
-            $false
-        )
-        if ($alreadyTrusted.Count -eq 0) {
-            $rootStore.Add($publicCert)
-            $temporaryRootCertificateAdded = $true
-            Write-Warning 'Temporarily trusted the exact pinned FireClient test certificate in the disposable GitHub runner. This does NOT make the publisher trusted on end-user devices.'
-        } else {
-            Write-Host 'Exact pinned FireClient test certificate is already in the current-user root store.'
-        }
-    } catch {
-        Stop-WithError "Could not temporarily trust the exact pinned certificate on this runner: $($_.Exception.Message)"
-    } finally {
-        if ($null -ne $rootStore) { $rootStore.Close() }
-        if ($null -ne $publicCert) { $publicCert.Dispose() }
-    }
-} elseif ($certificateThumbprint -eq $expectedThumbprint -and -not [string]::IsNullOrWhiteSpace($expectedThumbprint)) {
-    Stop-WithError 'This is the pinned self-signed FireClient test certificate, but ALLOW_UNTRUSTED_SELF_SIGNED_CERTIFICATE is not enabled. Do not use this test setting for production releases.'
+    Write-Warning 'Test-only mode enabled for the exact pinned self-signed certificate. This does NOT make FireClient trusted on customer PCs.'
+} elseif (-not [string]::IsNullOrWhiteSpace($expectedThumbprint) -and $certificateThumbprint -eq $expectedThumbprint) {
+    Stop-WithError 'The configured certificate is the pinned self-signed test certificate, but ALLOW_UNTRUSTED_SELF_SIGNED_CERTIFICATE is not enabled.'
 }
 if ($certificate -is [System.IDisposable]) { $certificate.Dispose() }
-Write-Host 'Certificate trust configuration checked.'
+Write-Host 'Pinned certificate check passed.'
 
 Write-Host 'Stage 4/5: Locating Windows SDK SignTool.'
 $sdkBin = Join-Path ${env:ProgramFiles(x86)} 'Windows Kits/10/bin'
@@ -178,30 +143,25 @@ $verifyText = (($verifyOutput -join "`n") -replace '\s+', ' ')
 $verifyOutput | ForEach-Object { Write-Host $_ }
 
 if ($verifyExitCode -ne 0) {
-    # Fail closed except for the one narrowly permitted case: an authentic,
-    # timestamped signature from the exact pinned self-signed PFX certificate,
-    # where SignTool reports only the untrusted-root chain error, after attempting
-    # to trust the exact pinned development certificate in the runner's root store.
-    $authenticode = Get-AuthenticodeSignature -FilePath $distExe
-    $actualSignerThumbprint = ''
-    if ($null -ne $authenticode.SignerCertificate) {
-        $actualSignerThumbprint = ([string]$authenticode.SignerCertificate.Thumbprint -replace '\s', '').ToUpperInvariant()
-    }
+    # Permit only the expected untrusted-root failure for this exact test signer.
+    # Parse the signer SHA1 directly from SignTool output instead of calling
+    # Get-AuthenticodeSignature, which can block during online chain/revocation checks.
     $onlyUntrustedRoot = $verifyText -match '(?i)A certificate chain processed, but terminated in a root certificate which is not trusted by the trust provider'
     $signToolErrorCount = [regex]::Matches($verifyText, '(?i)SignTool Error:').Count
     $singleReportedError = $verifyText -match '(?i)Number of errors:\s*1' -and $signToolErrorCount -eq 1
-    # Exact thumbprint pin below is the test-certificate identity check; do not
-    # compare Subject and Issuer text because X.500 name formatting may differ.
-    $signerMatchesPfx = $actualSignerThumbprint -eq $certificateThumbprint
+    $signingChainMatch = [regex]::Match($verifyText, '(?i)Signing Certificate Chain:(.*?)(?:The signature is timestamped|Timestamp Verified by:|Number of signatures)')
+    $signingChainSection = $signingChainMatch.Groups[1].Value
+    $signingHashMatch = [regex]::Match($signingChainSection, '(?i)SHA1 hash:\s*([A-F0-9]{40})')
+    $actualSignerThumbprint = $signingHashMatch.Groups[1].Value.ToUpperInvariant()
+    $signerMatchesPfx = -not [string]::IsNullOrWhiteSpace($actualSignerThumbprint) -and $actualSignerThumbprint -eq $certificateThumbprint
     $thumbprintIsPinned = -not [string]::IsNullOrWhiteSpace($expectedThumbprint) -and $actualSignerThumbprint -eq $expectedThumbprint
     $timestampPresent = $verifyText -match '(?i)The signature is timestamped' -and $verifyText -match '(?i)Timestamp Verified by:'
-    $statusIsOnlyTrustIssue = ([string]$authenticode.Status -in @('NotTrusted', 'UnknownError')) -and ($authenticode.StatusMessage -match '(?i)not trusted|untrusted root|trust provider|certificate chain')
 
-    if ($allowSelfSigned -and $onlyUntrustedRoot -and $singleReportedError -and $signerMatchesPfx -and $thumbprintIsPinned -and $timestampPresent -and $statusIsOnlyTrustIssue) {
-        Write-Warning 'SignTool still reports only an untrusted-root issue for the exact pinned test certificate.'
-        Write-Warning 'Proceeding with test-release metadata only; this installer is NOT trusted by default on end-user devices.'
+    if ($allowSelfSigned -and $onlyUntrustedRoot -and $singleReportedError -and $signerMatchesPfx -and $thumbprintIsPinned -and $timestampPresent) {
+        Write-Warning 'SignTool reports exactly one error: the untrusted root of the exact pinned self-signed test certificate.'
+        Write-Warning 'Continuing with test-release metadata only. Windows will NOT treat this as a trusted publisher.'
     } else {
-        $verificationError = "SignTool verification failed with exit code $verifyExitCode. Refusing to publish unless the only issue is the untrusted root for the exact pinned FireClient test certificate.`nSigner status: $($authenticode.Status) - $($authenticode.StatusMessage)`nPFX certificate thumbprint: $certificateThumbprint`nActual signer thumbprint: $actualSignerThumbprint`nExpected pinned thumbprint: $expectedThumbprint`nFallback enabled: $allowSelfSigned"
+        $verificationError = "SignTool verification failed with exit code $verifyExitCode.`nOnly expected untrusted-root fallback: $($allowSelfSigned -and $onlyUntrustedRoot -and $singleReportedError -and $signerMatchesPfx -and $thumbprintIsPinned -and $timestampPresent)`nUntrusted-root error: $onlyUntrustedRoot`nSingle error: $singleReportedError`nSigner SHA1: $actualSignerThumbprint`nPFX SHA1: $certificateThumbprint`nPinned SHA1: $expectedThumbprint`nTimestamp details found: $timestampPresent"
         Stop-WithError $verificationError
     }
 }
@@ -235,32 +195,6 @@ releaseDate: "$releaseDate"
 $check = [Convert]::ToBase64String([Security.Cryptography.SHA512]::HashData([IO.File]::ReadAllBytes($distExe)))
 if ($check -ne $sha512) {
     Stop-WithError "Generated latest.yml hash verification failed."
-}
-
-# Remove the temporary trust anchor after signature verification. GitHub-hosted
-# runners are ephemeral as an additional cleanup boundary.
-if ($temporaryRootCertificateAdded) {
-    $cleanupStore = $null
-    try {
-        $cleanupStore = [System.Security.Cryptography.X509Certificates.X509Store]::new(
-            [System.Security.Cryptography.X509Certificates.StoreName]::Root,
-            [System.Security.Cryptography.X509Certificates.StoreLocation]::CurrentUser
-        )
-        $cleanupStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
-        $temporaryRoots = $cleanupStore.Certificates.Find(
-            [System.Security.Cryptography.X509Certificates.X509FindType]::FindByThumbprint,
-            $certificateThumbprint,
-            $false
-        )
-        foreach ($temporaryRoot in $temporaryRoots) {
-            $cleanupStore.Remove($temporaryRoot)
-            $temporaryRoot.Dispose()
-        }
-    } catch {
-        Write-Warning "Could not remove temporary root certificate from runner: $($_.Exception.Message)"
-    } finally {
-        if ($null -ne $cleanupStore) { $cleanupStore.Close() }
-    }
 }
 
 Write-Host "Installer signature checked; generated updater metadata for: $distExe"
