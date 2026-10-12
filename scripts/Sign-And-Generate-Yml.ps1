@@ -27,12 +27,30 @@ if (-not (Test-Path -LiteralPath $sourceExe -PathType Leaf)) {
     Stop-WithError "Installer not found: $sourceExe"
 }
 
-try {
-    $pfxBytes = [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE_BASE64.Trim())
-    [IO.File]::WriteAllBytes($certPath, $pfxBytes)
-} catch {
-    Stop-WithError 'WINDOWS_CERTIFICATE_BASE64 is not valid Base64-encoded PFX data.'
+# GitHub Secrets must contain the Base64 text of the PFX FILE BYTES, not
+# the PFX filename, password, or a PEM certificate. Remove line breaks/spaces
+# to tolerate Base64 copied from tools that wrap long output.
+$base64Text = $env:WINDOWS_CERTIFICATE_BASE64 -replace '\s', ''
+if ([string]::IsNullOrWhiteSpace($base64Text)) {
+    Stop-WithError 'WINDOWS_CERTIFICATE_BASE64 is empty. Encode the .pfx file bytes and save that text as the GitHub Actions secret.'
 }
+if ($base64Text -notmatch '^[A-Za-z0-9+/]*={0,2}$' -or ($base64Text.Length % 4) -ne 0) {
+    Stop-WithError @'
+WINDOWS_CERTIFICATE_BASE64 is not valid standard Base64. The secret must contain the encoded bytes of the password-protected .pfx file, not the file path, PFX password, or a certificate PEM block.
+On your own Windows computer, run: [Convert]::ToBase64String([IO.File]::ReadAllBytes('C:\path\to\codesign.pfx')) | Set-Clipboard
+Then replace the GitHub Actions secret WINDOWS_CERTIFICATE_BASE64 with the clipboard contents. Do not commit or upload the PFX to your repository.
+'@
+}
+try {
+    $pfxBytes = [Convert]::FromBase64String($base64Text)
+} catch {
+    Stop-WithError 'Could not decode WINDOWS_CERTIFICATE_BASE64. Recreate the secret from the actual .pfx file bytes.'
+}
+# PKCS#12/PFX files are DER-encoded ASN.1 sequences and normally start with 0x30.
+if ($pfxBytes.Length -lt 128 -or $pfxBytes[0] -ne 0x30) {
+    Stop-WithError 'The secret decoded, but does not look like a PKCS#12/PFX file. Re-encode the .pfx file itself, not a .cer/.pem file or its filename.'
+}
+[IO.File]::WriteAllBytes($certPath, $pfxBytes)
 
 $securePassword = ConvertTo-SecureString $env:WINDOWS_CERTIFICATE_PASSWORD -AsPlainText -Force
 try {

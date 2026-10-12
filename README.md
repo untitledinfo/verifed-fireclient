@@ -17,15 +17,21 @@ In the GitHub repository, open **Settings → Secrets and variables → Actions 
 - `WINDOWS_CERTIFICATE_BASE64`: Base64-encoded contents of the PFX file, on one line.
 - `WINDOWS_CERTIFICATE_PASSWORD`: the PFX password.
 
-To encode a PFX on PowerShell (run locally on your own computer):
+For the safer guided route, run `scripts/Prepare-Certificate-Secret.ps1` locally in Windows PowerShell or PowerShell on Windows. It prompts for the PFX path and password, confirms Windows can open it, checks the publisher subject and validity dates, and copies the Base64-encoded PFX bytes to your clipboard without printing them. Then paste the clipboard into `WINDOWS_CERTIFICATE_BASE64`.
+
+Alternatively, run this locally in PowerShell (adjust the path):
 
 ```powershell
-[Convert]::ToBase64String([IO.File]::ReadAllBytes('.\FireClient-CodeSigning.pfx')) | Set-Clipboard
+[Convert]::ToBase64String([IO.File]::ReadAllBytes('C:\path\to\codesign.pfx')) | Set-Clipboard
 ```
 
-Paste that value directly into `WINDOWS_CERTIFICATE_BASE64`. Do not share the PFX or password in chat, issues, source code, or a public repository. If your certificate uses a different naming format, inspect its subject and adjust the subject check in `scripts/Sign-And-Generate-Yml.ps1` only after confirming the certificate is genuinely issued to the intended publisher.
+`WINDOWS_CERTIFICATE_BASE64` must be the Base64 text of the PFX file bytes—not the file path, certificate password, raw PFX file, or a `.cer`/`.pem` certificate. The workflow now removes whitespace, validates that the secret decodes to PFX-shaped data, and shows a more actionable error when it does not. Do not share the PFX or password in chat, issues, source code, or a public repository. If your certificate uses a different subject naming format, inspect it and adjust the subject check only after confirming the certificate is genuinely issued to the intended publisher.
 
-## 3. Run a release
+## 3. Fixing `WINDOWS_CERTIFICATE_BASE64 is not valid Base64-encoded PFX data`
+
+This error is a GitHub secret-format problem: the workflow did not receive Base64 text representing the PFX bytes. It does not mean the installer itself failed. Run `scripts/Prepare-Certificate-Secret.ps1` on your computer, then replace the `WINDOWS_CERTIFICATE_BASE64` secret with the clipboard value. Replace `WINDOWS_CERTIFICATE_PASSWORD` separately with the PFX password. Re-run the workflow. If it then reports that the PFX cannot be opened, check the password; if it reports a publisher-subject or trust error, check that the certificate is the correct valid code-signing certificate.
+
+## 4. Run a release
 
 1. Upload your intended unsigned installer to `release/FireClient-Setup.exe` and commit it.
 2. Open **Actions → Sign FireClient Setup and Publish → Run workflow**.
