@@ -160,6 +160,12 @@ if ($verifyExitCode -ne 0) {
     if ($allowSelfSigned -and $onlyUntrustedRoot -and $singleReportedError -and $signerMatchesPfx -and $thumbprintIsPinned -and $timestampPresent) {
         Write-Warning 'SignTool reports exactly one error: the untrusted root of the exact pinned self-signed test certificate.'
         Write-Warning 'Continuing with test-release metadata only. Windows will NOT treat this as a trusted publisher.'
+        # SignTool's expected test-only verification failure leaves LASTEXITCODE=1.
+        # GitHub Actions' PowerShell wrapper propagates the final LASTEXITCODE even
+        # after this script has handled the one permitted condition. Clear it here
+        # only after all pinned-certificate and timestamp checks have passed.
+        $global:LASTEXITCODE = 0
+        Write-Host 'Accepted the narrowly scoped test-only verification fallback; clearing native exit status.'
     } else {
         $verificationError = "SignTool verification failed with exit code $verifyExitCode.`nOnly expected untrusted-root fallback: $($allowSelfSigned -and $onlyUntrustedRoot -and $singleReportedError -and $signerMatchesPfx -and $thumbprintIsPinned -and $timestampPresent)`nUntrusted-root error: $onlyUntrustedRoot`nSingle error: $singleReportedError`nSigner SHA1: $actualSignerThumbprint`nPFX SHA1: $certificateThumbprint`nPinned SHA1: $expectedThumbprint`nTimestamp details found: $timestampPresent"
         Stop-WithError $verificationError
@@ -201,3 +207,6 @@ Write-Host "Installer signature checked; generated updater metadata for: $distEx
 Write-Host "Generated updater metadata: $latestYml"
 Write-Host "Version: $version | Size: $size bytes | SHA-512: $sha512"
 Remove-Item -LiteralPath $certPath -Force -ErrorAction SilentlyContinue
+
+# Ensure successful script completion is not marked failed by a handled native command.
+$global:LASTEXITCODE = 0
