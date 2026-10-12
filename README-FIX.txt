@@ -1,16 +1,12 @@
-FireClient Signing Fix v4
-========================
+FireClient Signing Fix v5
 
-Replace these files in your GitHub repository:
-- scripts/Sign-And-Generate-Yml.ps1
-- .github/workflows/sign-release.yml
+Parser-error fix:
+- Removed a typographic (curly) apostrophe from a single-quoted PowerShell string. PowerShell can interpret smart quotation characters as delimiters, causing a missing-string-terminator error reported later in the file.
+- Changed the release-date format argument to double quotes for clarity.
 
-This version keeps the PowerShell AST syntax check and uses a round-trip ISO-8601 (`o`) date format string for releaseDate, avoiding nested quote characters. Commit both replacement files, then rerun the workflow and verify the syntax-validation step passes before signing.
+Apply:
+1. Replace scripts/Sign-And-Generate-Yml.ps1 in your GitHub repository with this file.
+2. Keep .github/workflows/sign-release.yml in sync with this package.
+3. Commit to main, then run Actions again. Confirm the run checks out the new commit SHA and reports "Signing script syntax validation passed." before signing.
 
-Keep repository secrets:
-- WINDOWS_CERTIFICATE_BASE64
-- WINDOWS_CERTIFICATE_PASSWORD
-
-This workflow contains a TEST-ONLY workaround for the pinned self-signed FireClient certificate. It does not make the app a trusted Windows publisher. For production releases use a certificate issued by a CA trusted by Windows. Do not commit PFX files or passwords.
-
-Commit both replacement files to main, then run Actions > Sign FireClient Setup and Publish. Confirm the new run checks out the new commit SHA and shows the “Validate PowerShell script syntax” step passing.
+Note: this package supports a pinned, self-signed certificate only for test artifacts on an ephemeral CI runner. It does not make the publisher trusted on customer PCs. A publicly trusted code-signing certificate is required for a Windows Verified Publisher trust chain.

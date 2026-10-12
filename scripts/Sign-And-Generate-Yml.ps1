@@ -176,7 +176,7 @@ if ($verifyExitCode -ne 0) {
 
     if ($allowSelfSigned -and $onlyUntrustedRoot -and $singleReportedError -and $signerMatchesPfx -and $thumbprintIsPinned -and $timestampPresent -and $statusIsOnlyTrustIssue) {
         Write-Warning 'SignTool still reports only an untrusted-root issue for the exact pinned test certificate.'
-        Write-Warning 'Proceeding with test-release metadata only; this installer is NOT a trusted-publisher release on users’ PCs.'
+        Write-Warning 'Proceeding with test-release metadata only; this installer is NOT trusted by default on end-user devices.'
     } else {
         $verificationError = "SignTool verification failed with exit code $verifyExitCode. Refusing to publish unless the only issue is the untrusted root for the exact pinned FireClient test certificate.`nSigner status: $($authenticode.Status) - $($authenticode.StatusMessage)`nPFX certificate thumbprint: $certificateThumbprint`nActual signer thumbprint: $actualSignerThumbprint`nExpected pinned thumbprint: $expectedThumbprint`nFallback enabled: $allowSelfSigned"
         Stop-WithError $verificationError
@@ -193,7 +193,7 @@ try {
     $sha.Dispose()
 }
 $size = (Get-Item -LiteralPath $distExe).Length
-$releaseDate = [DateTime]::UtcNow.ToString('o')
+$releaseDate = [DateTime]::UtcNow.ToString("o")
 $version = $env:RELEASE_VERSION
 
 # Modern electron-updater files[] format. This YAML contains a SHA-512 integrity
