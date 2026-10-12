@@ -39,14 +39,25 @@ jobs:
           }
           "RELEASE_VERSION=$version" >> $env:GITHUB_ENV
 
+      - name: Validate PowerShell script syntax
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $parseErrors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD 'scripts/Sign-And-Generate-Yml.ps1'), [ref]$tokens, [ref]$parseErrors) | Out-Null
+          if ($parseErrors.Count -gt 0) {
+            $parseErrors | ForEach-Object { Write-Error ("PowerShell parse error at {0}: {1}" -f $_.Extent.StartLineNumber, $_.Message) }
+            exit 1
+          }
+          Write-Host 'Signing script syntax validation passed.'
+
       - name: Sign executable, verify signature, and generate latest.yml
         shell: pwsh
         env:
           WINDOWS_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_CERTIFICATE_BASE64 }}
           WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
-          # TEST RELEASES ONLY: script temporarily trusts this exact pinned
-          # self-signed cert on the ephemeral runner so SignTool can verify the
-          # signature. This does NOT make it trusted on users' PCs.
+          # TEST RELEASES ONLY: this allows verification to proceed only for this
+          # exact pinned development certificate on the disposable CI runner.
           ALLOW_UNTRUSTED_SELF_SIGNED_CERTIFICATE: 'true'
           EXPECTED_SIGNING_CERT_THUMBPRINT: 'BDF35D4B69863EB70590708C44D11E18C12AF2C5'
         run: ./scripts/Sign-And-Generate-Yml.ps1

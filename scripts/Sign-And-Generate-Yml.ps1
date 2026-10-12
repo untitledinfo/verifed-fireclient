@@ -35,11 +35,8 @@ if ([string]::IsNullOrWhiteSpace($base64Text)) {
     Stop-WithError 'WINDOWS_CERTIFICATE_BASE64 is empty. Encode the .pfx file bytes and save that text as the GitHub Actions secret.'
 }
 if ($base64Text -notmatch '^[A-Za-z0-9+/]*={0,2}$' -or ($base64Text.Length % 4) -ne 0) {
-    Stop-WithError @'
-WINDOWS_CERTIFICATE_BASE64 is not valid standard Base64. The secret must contain the encoded bytes of the password-protected .pfx file, not the file path, PFX password, or a certificate PEM block.
-On your own Windows computer, run: [Convert]::ToBase64String([IO.File]::ReadAllBytes('C:\path\to\codesign.pfx')) | Set-Clipboard
-Then replace the GitHub Actions secret WINDOWS_CERTIFICATE_BASE64 with the clipboard contents. Do not commit or upload the PFX to your repository.
-'@
+    $base64Error = "WINDOWS_CERTIFICATE_BASE64 is not valid standard Base64. The secret must contain the encoded bytes of the password-protected .pfx file, not the file path, PFX password, or a certificate PEM block.`nOn your own Windows computer, run: [Convert]::ToBase64String([IO.File]::ReadAllBytes('C:\path\to\codesign.pfx')) | Set-Clipboard`nThen replace the GitHub Actions secret WINDOWS_CERTIFICATE_BASE64 with the clipboard contents. Do not commit or upload the PFX to your repository."
+    Stop-WithError $base64Error
 }
 try {
     $pfxBytes = [Convert]::FromBase64String($base64Text)
@@ -63,9 +60,8 @@ try {
     )
 } catch {
     $reason = $_.Exception.Message
-    Stop-WithError @"
-Could not open the PFX certificate. Most commonly WINDOWS_CERTIFICATE_PASSWORD is not the exact password used when the PFX was exported, or this PFX is damaged/incompatible. Re-export the certificate from its provider or run scripts/Repair-Certificate-Secret.ps1 locally if the matching private key is installed in Windows. Underlying import error: $reason
-"@
+    $pfxImportError = "Could not open the PFX certificate. Most commonly WINDOWS_CERTIFICATE_PASSWORD is not the exact password used when the PFX was exported, or this PFX is damaged/incompatible. Re-export the certificate from its provider or run scripts/Repair-Certificate-Secret.ps1 locally if the matching private key is installed in Windows. Underlying import error: $reason"
+    Stop-WithError $pfxImportError
 }
 
 $subject = [string]$certificate.Subject
@@ -182,14 +178,8 @@ if ($verifyExitCode -ne 0) {
         Write-Warning 'SignTool still reports only an untrusted-root issue for the exact pinned test certificate.'
         Write-Warning 'Proceeding with test-release metadata only; this installer is NOT a trusted-publisher release on users’ PCs.'
     } else {
-        Stop-WithError @"
-SignTool verification failed with exit code $verifyExitCode. Refusing to publish unless the only issue is the untrusted root for the exact pinned FireClient test certificate.
-Signer status: $($authenticode.Status) - $($authenticode.StatusMessage)
-PFX certificate thumbprint: $certificateThumbprint
-Actual signer thumbprint: $actualSignerThumbprint
-Expected pinned thumbprint: $expectedThumbprint
-Fallback enabled: $allowSelfSigned
-"@
+        $verificationError = "SignTool verification failed with exit code $verifyExitCode. Refusing to publish unless the only issue is the untrusted root for the exact pinned FireClient test certificate.`nSigner status: $($authenticode.Status) - $($authenticode.StatusMessage)`nPFX certificate thumbprint: $certificateThumbprint`nActual signer thumbprint: $actualSignerThumbprint`nExpected pinned thumbprint: $expectedThumbprint`nFallback enabled: $allowSelfSigned"
+        Stop-WithError $verificationError
     }
 }
 
@@ -221,7 +211,7 @@ releaseDate: "$releaseDate"
 # Read the output back and assert its SHA-512 is the hash of the signed EXE.
 $check = [Convert]::ToBase64String([Security.Cryptography.SHA512]::HashData([IO.File]::ReadAllBytes($distExe)))
 if ($check -ne $sha512) {
-    Stop-WithError 'Generated latest.yml hash verification failed.'
+    Stop-WithError "Generated latest.yml hash verification failed."
 }
 
 # Remove the temporary trust anchor after signature verification. GitHub-hosted

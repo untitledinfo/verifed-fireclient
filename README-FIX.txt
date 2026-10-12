@@ -1,10 +1,16 @@
-FIRECLIENT SIGNING FIX v2
+FireClient Signing Fix v3
+========================
 
-Your current Actions run still checks out commit 124c05eb4b591b4934b87dfa3879117193b48948, whose script is the old version. This patch replaces the committed files at these exact repository paths:
+Replace these files in your GitHub repository:
+- scripts/Sign-And-Generate-Yml.ps1
+- .github/workflows/sign-release.yml
 
-  scripts/Sign-And-Generate-Yml.ps1
-  .github/workflows/sign-release.yml
+This version removes multiline here-strings used directly as function arguments, changes the latest.yml hash error string to a double-quoted literal, and adds a PowerShell AST syntax check before the signing script runs. This makes a future syntax problem fail early with the precise parser message.
 
-Apply both files on the main branch, commit them, and check that the next Actions run checks out a NEW commit SHA. The workflow adds ALLOW_UNTRUSTED_SELF_SIGNED_CERTIFICATE=true and pins the exact test certificate thumbprint BDF35D4B69863EB70590708C44D11E18C12AF2C5. The script adds that exact certificate to CurrentUser\Root on the ephemeral CI runner before verification. If SignTool still reports solely an untrusted root, a strict fallback permits test artifact metadata only when the signer thumbprint matches the pinned certificate and the timestamp is present/verified. Other signature errors remain failures.
+Keep repository secrets:
+- WINDOWS_CERTIFICATE_BASE64
+- WINDOWS_CERTIFICATE_PASSWORD
 
-IMPORTANT: this is a test-build workaround only. It does not make the certificate trusted by customers' Windows installations or create a genuinely trusted Verified Publisher. For production use a publicly trusted code-signing certificate. Never upload the PFX or password to the repository.
+This workflow contains a TEST-ONLY workaround for the pinned self-signed FireClient certificate. It does not make the app a trusted Windows publisher. For production releases use a certificate issued by a CA trusted by Windows. Do not commit PFX files or passwords.
+
+Commit both replacement files to main, then run Actions > Sign FireClient Setup and Publish. Confirm the new run checks out the new commit SHA and shows the “Validate PowerShell script syntax” step passing.
