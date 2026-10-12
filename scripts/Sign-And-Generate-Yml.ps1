@@ -23,6 +23,8 @@ $distExe = Join-Path $distDir 'FireClient-Setup.exe'
 $latestYml = Join-Path $distDir 'latest.yml'
 $certPath = Join-Path $env:RUNNER_TEMP 'fireclient-code-signing.pfx'
 
+Write-Host 'Stage 1/5: Checking installer and certificate secret.'
+
 if (-not (Test-Path -LiteralPath $sourceExe -PathType Leaf)) {
     Stop-WithError "Installer not found: $sourceExe"
 }
@@ -48,7 +50,9 @@ if ($pfxBytes.Length -lt 128 -or $pfxBytes[0] -ne 0x30) {
     Stop-WithError 'The secret decoded, but does not look like a PKCS#12/PFX file. Re-encode the .pfx file itself, not a .cer/.pem file or its filename.'
 }
 [IO.File]::WriteAllBytes($certPath, $pfxBytes)
+Write-Host 'Certificate PFX bytes decoded and written to the temporary runner directory.'
 
+Write-Host 'Stage 2/5: Importing PFX and checking the private signing key.'
 try {
     # Use .NET's explicit PFX import to validate the private key and surface a
     # more useful underlying error than Get-PfxCertificate's generic message.
@@ -73,6 +77,7 @@ if ($subject -notmatch '(?i)(CN\s*=\s*FireClient LLC|O\s*=\s*FireClient LLC)') {
 if (-not $certificate.HasPrivateKey) {
     Stop-WithError 'The PFX does not contain a private signing key.'
 }
+Write-Host 'PFX imported successfully.'
 $now = Get-Date
 if ($certificate.NotBefore -gt $now -or $certificate.NotAfter -lt $now) {
     Stop-WithError "Certificate is not currently valid. Valid from $($certificate.NotBefore) through $($certificate.NotAfter)."
@@ -92,6 +97,7 @@ $expectedThumbprint = ([string]$env:EXPECTED_SIGNING_CERT_THUMBPRINT -replace '\
 # Comparing the complete Subject and Issuer strings therefore is not a reliable
 # self-signed test. In this workflow, trust is allowed ONLY when the actual PFX
 # thumbprint exactly matches the hard-pinned value and the opt-in is enabled.
+Write-Host 'Stage 3/5: Checking certificate trust configuration.'
 if ($allowSelfSigned) {
     if ([string]::IsNullOrWhiteSpace($expectedThumbprint) -or $certificateThumbprint -ne $expectedThumbprint) {
         Stop-WithError "Refusing to trust certificate thumbprint $certificateThumbprint because it does not exactly match EXPECTED_SIGNING_CERT_THUMBPRINT."
@@ -129,19 +135,36 @@ if ($allowSelfSigned) {
     Stop-WithError 'This is the pinned self-signed FireClient test certificate, but ALLOW_UNTRUSTED_SELF_SIGNED_CERTIFICATE is not enabled. Do not use this test setting for production releases.'
 }
 if ($certificate -is [System.IDisposable]) { $certificate.Dispose() }
+Write-Host 'Certificate trust configuration checked.'
 
+Write-Host 'Stage 4/5: Locating Windows SDK SignTool.'
 $sdkBin = Join-Path ${env:ProgramFiles(x86)} 'Windows Kits/10/bin'
-$signtool = Get-ChildItem -LiteralPath $sdkBin -Filter signtool.exe -Recurse -ErrorAction SilentlyContinue |
-    Where-Object { $_.FullName -match '[\\/]x64[\\/]signtool\.exe$' } |
-    Sort-Object { try { [version]$_.Directory.Parent.Name } catch { [version]'0.0' } } -Descending |
-    Select-Object -First 1
-if ($null -eq $signtool) {
-    Stop-WithError 'Windows SDK SignTool was not found on this runner.'
+$signtool = $null
+if (Test-Path -LiteralPath $sdkBin -PathType Container) {
+    # SignTool normally lives directly in <SDK version>\x64\signtool.exe.
+    # Search only version folders rather than recursively walking every SDK file.
+    $sdkVersions = Get-ChildItem -LiteralPath $sdkBin -Directory -ErrorAction SilentlyContinue |
+        Sort-Object { try { [version]$_.Name } catch { [version]'0.0' } } -Descending
+    foreach ($sdkVersion in $sdkVersions) {
+        foreach ($architecture in @('x64', 'x86')) {
+            $candidate = Join-Path $sdkVersion.FullName (Join-Path $architecture 'signtool.exe')
+            if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+                $signtool = Get-Item -LiteralPath $candidate
+                break
+            }
+        }
+        if ($null -ne $signtool) { break }
+    }
 }
+if ($null -eq $signtool) {
+    Stop-WithError "Windows SDK SignTool was not found in the SDK version folders under '$sdkBin'."
+}
+Write-Host "Found SignTool: $($signtool.FullName)"
 
 New-Item -ItemType Directory -Force -Path $distDir | Out-Null
 Copy-Item -LiteralPath $sourceExe -Destination $distExe -Force
 
+Write-Host 'Stage 5/5: Signing installer.'
 Write-Host "Signing installer with certificate subject: $subject"
 & $signtool.FullName sign /fd SHA256 /tr 'http://timestamp.digicert.com' /td SHA256 /f $certPath /p $env:WINDOWS_CERTIFICATE_PASSWORD /d 'FireClient' /du 'https://www.fireclient.net' $distExe
 if ($LASTEXITCODE -ne 0) {

@@ -1,12 +1,11 @@
-FireClient Signing Fix v5
+FireClient Signing Fix v6
 
-Parser-error fix:
-- Removed a typographic (curly) apostrophe from a single-quoted PowerShell string. PowerShell can interpret smart quotation characters as delimiters, causing a missing-string-terminator error reported later in the file.
-- Changed the release-date format argument to double quotes for clarity.
+This patch adds progress checkpoints and replaces the recursive Windows SDK SignTool search with a fast version-folder lookup. The screenshot showed that PowerShell syntax validation passed but the signing script stayed active without reaching its first signing message. This patch is intended to expose the stage where it pauses and avoid a slow recursive scan.
 
-Apply:
-1. Replace scripts/Sign-And-Generate-Yml.ps1 in your GitHub repository with this file.
-2. Keep .github/workflows/sign-release.yml in sync with this package.
-3. Commit to main, then run Actions again. Confirm the run checks out the new commit SHA and reports "Signing script syntax validation passed." before signing.
+Files to replace in your repository (commit to main):
+- scripts/Sign-And-Generate-Yml.ps1
+- .github/workflows/sign-release.yml (included unchanged except the job timeout safeguard)
 
-Note: this package supports a pinned, self-signed certificate only for test artifacts on an ephemeral CI runner. It does not make the publisher trusted on customer PCs. A publicly trusted code-signing certificate is required for a Windows Verified Publisher trust chain.
+Then stop the currently running workflow and run a new workflow after committing. Keep the existing certificate secrets private.
+
+Security: this workflow's self-signed certificate setting is test-only. It does not provide Windows Verified Publisher status.
