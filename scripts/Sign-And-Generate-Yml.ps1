@@ -146,7 +146,15 @@ if ($verifyExitCode -ne 0) {
     # Permit only the expected untrusted-root failure for this exact test signer.
     # Parse the signer SHA1 directly from SignTool output instead of calling
     # Get-AuthenticodeSignature, which can block during online chain/revocation checks.
-    $onlyUntrustedRoot = $verifyText -match '(?i)A certificate chain processed, but terminated in a root certificate which is not trusted by the trust provider'
+    # SignTool error messages may be multi-line and can interleave with stdout verbose lines
+    # when captured via 2>&1. We inspect pure ErrorRecord objects from stderr as well as
+    # flexible regex patterns over the combined output.
+    $errorRecords = @($verifyOutput | Where-Object { $_ -is [System.Management.Automation.ErrorRecord] } | ForEach-Object { $_.ToString() })
+    $errorRecordText = (($errorRecords -join ' ') -replace '\s+', ' ')
+    $hasUntrustedRootInStderr = $errorRecordText -match '(?i)A certificate chain processed, but terminated in a root certificate which is not trusted by the trust provider'
+    $hasUntrustedRootInCombined = ($verifyText -match '(?i)A certificate chain processed,\s*but terminated in a root.*?certificate which is not trusted by the trust provider') -or
+                                  (($verifyText -match '(?i)terminated in a root') -and ($verifyText -match '(?i)certificate which is not trusted by the trust provider'))
+    $onlyUntrustedRoot = $hasUntrustedRootInStderr -or $hasUntrustedRootInCombined
     $signToolErrorCount = [regex]::Matches($verifyText, '(?i)SignTool Error:').Count
     $singleReportedError = $verifyText -match '(?i)Number of errors:\s*1' -and $signToolErrorCount -eq 1
     $signingChainMatch = [regex]::Match($verifyText, '(?i)Signing Certificate Chain:(.*?)(?:The signature is timestamped|Timestamp Verified by:|Number of signatures)')
