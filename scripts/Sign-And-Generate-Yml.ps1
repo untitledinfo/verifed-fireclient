@@ -131,9 +131,24 @@ Copy-Item -LiteralPath $sourceExe -Destination $distExe -Force
 
 Write-Host 'Stage 5/5: Signing installer.'
 Write-Host "Signing installer with certificate subject: $subject"
-& $signtool.FullName sign /fd SHA256 /tr 'http://timestamp.digicert.com' /td SHA256 /f $certPath /p $env:WINDOWS_CERTIFICATE_PASSWORD /d 'FireClient Launcher' /du 'https://www.fireclient.net' $distExe
-if ($LASTEXITCODE -ne 0) {
-    Stop-WithError "SignTool sign failed with exit code $LASTEXITCODE."
+$timestampServers = @(
+    'http://timestamp.digicert.com',
+    'http://timestamp.sectigo.com',
+    'http://timestamp.acs.microsoft.com'
+)
+$signed = $false
+foreach ($tsUrl in $timestampServers) {
+    Write-Host "Attempting Authenticode signing with timestamp server: $tsUrl"
+    & $signtool.FullName sign /fd SHA256 /tr $tsUrl /td SHA256 /f $certPath /p $env:WINDOWS_CERTIFICATE_PASSWORD /d 'FireClient Launcher' /du 'https://www.fireclient.net' $distExe
+    if ($LASTEXITCODE -eq 0) {
+        $signed = $true
+        Write-Host "Successfully signed installer using timestamp: $tsUrl"
+        break
+    }
+    Write-Warning "Timestamp attempt failed for '$tsUrl' (exit code $LASTEXITCODE). Trying next RFC 3161 authority..."
+}
+if (-not $signed) {
+    Stop-WithError "SignTool sign failed across all RFC 3161 timestamp authorities."
 }
 
 Write-Host 'Verifying Authenticode signature...'
@@ -214,6 +229,22 @@ if ($check -ne $sha512) {
 Write-Host "Installer signature checked; generated updater metadata for: $distExe"
 Write-Host "Generated updater metadata: $latestYml"
 Write-Host "Version: $version | Size: $size bytes | SHA-512: $sha512"
+
+# Generate standard checksum manifests
+$sha256Hex = (Get-FileHash -LiteralPath $distExe -Algorithm SHA256).Hash.ToLowerInvariant()
+$sha512Hex = (Get-FileHash -LiteralPath $distExe -Algorithm SHA512).Hash.ToLowerInvariant()
+$ymlSha256 = (Get-FileHash -LiteralPath $latestYml -Algorithm SHA256).Hash.ToLowerInvariant()
+
+$sha256Sums = Join-Path $distDir 'SHA256SUMS.txt'
+$sha512Sums = Join-Path $distDir 'SHA512SUMS.txt'
+
+$sha256Content = "$sha256Hex *FireClient-Setup.exe`n$ymlSha256 *latest.yml`n"
+$sha512Content = "$sha512Hex *FireClient-Setup.exe`n"
+
+[IO.File]::WriteAllText($sha256Sums, $sha256Content, [Text.UTF8Encoding]::new($false))
+[IO.File]::WriteAllText($sha512Sums, $sha512Content, [Text.UTF8Encoding]::new($false))
+Write-Host "Generated checksum files: $sha256Sums, $sha512Sums"
+
 Remove-Item -LiteralPath $certPath -Force -ErrorAction SilentlyContinue
 
 # Ensure successful script completion is not marked failed by a handled native command.

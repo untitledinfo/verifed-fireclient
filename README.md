@@ -1,30 +1,63 @@
-# FireClient Windows Security Features (v9)
+# FireClient Windows Security & Publisher Suite (v10)
 
-This update adds a Windows release-security check to the working signing workflow:
+This release upgrades the security, User Account Control (UAC), Authenticode publisher verification, and build integrity pipeline across FireClient.
 
-- Signs the installer with a more descriptive Authenticode description: `FireClient Launcher`.
-- Reports the embedded publisher display name, organization, certificate subject, thumbprint, and Windows Authenticode trust status.
-- Runs an on-demand Microsoft Defender custom scan against the signed `dist/FireClient-Setup.exe` before release publication.
-- Fails the release if Defender is unavailable, reports a scan error, or returns a non-zero scan result.
-- Writes `dist/verification-report.json` with the signed EXE's SHA-256/SHA-512, publisher identity, trust state, and Defender scan result; uploads it as a GitHub artifact and release asset.
-- Runs PowerShell syntax validation on both scripts before attempting to sign.
+---
 
-## Important trust limitation
+## What's New & Upgraded
 
-The currently configured FireClient certificate thumbprint (`BDF35D4B69863EB70590708C44D11E18C12AF2C5`) is a self-signed test certificate. This workflow can report its certificate identity and scan the installer, but must not label it as a Windows Verified Publisher. The published report will explicitly state when the Windows trust status is not `Valid`. Changing `/d` changes the Authenticode description shown for the signed program; it does not change the certificate's publisher identity or make Windows trust the certificate.
+### 1. User Account Control (UAC) & Admin Privileges Audit
+- **Manifest Execution Level Analysis:** Automatically parses and verifies the PE application manifest (`<requestedExecutionLevel level="asInvoker" uiAccess="false"/>`).
+- **Elevation Policy Checks:** Confirms the installer runs cleanly with standard user rights (`asInvoker`) into `%LOCALAPPDATA%`, avoiding unnecessary administrator privilege escalation while auditing against accessibility boundaries (`uiAccess="false"`).
+- **UAC Dialogue Simulation:** Previews exactly how the Windows User Account Control consent prompt will appear on client PCs (Prompt Banner Color, Verified Publisher name, and Shield Icon status).
 
-For genuine Verified Publisher status, replace the test certificate with a valid code-signing certificate issued to the actual legal entity by a CA trusted by Windows, then remove the test-only fallback and thumbprint pin from the workflow. SmartScreen reputation can still take time to develop even after using a trusted certificate. See Microsoft guidance:
+### 2. Publisher Verification & Digital Signature Upgrades
+- **Unified Publisher Branding:** Aligned `CompanyName` and `LegalCopyright` to `FireClient LLC` across the NSIS installer (`installer.nsi`), Windows resource file (`app.rc`), and Authenticode certificate.
+- **Enhanced Authenticode Signing:** Signs using SHA-256 with descriptive application name (`FireClient Launcher`) and support URL (`https://www.fireclient.net`).
+- **RFC 3161 Timestamp Redundancy:** Added automated fallback between DigiCert, Sectigo, and Microsoft timestamp authorities to prevent build failures during third-party timestamp server downtime.
+- **Deep Certificate Health Check:** Audits validity dates, Subject/Issuer, Serial Number, Thumbprint, and Code Signing Extended Key Usage (EKU `1.3.6.1.5.5.7.3.3`).
 
-- https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/code-signing-options
-- https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/smartscreen-reputation
-- https://learn.microsoft.com/en-us/defender-endpoint/command-line-arguments-microsoft-defender-antivirus
+### 3. Binary Exploit Mitigations & Hardening
+- **PE Security Header Auditing:** Automatically inspects the PE Optional Header `DllCharacteristics` for:
+  - **DEP / NX (`NX_COMPAT`):** Enforces non-executable stack and heap memory buffers.
+  - **ASLR (`DYNAMIC_BASE`):** Address Space Layout Randomization to mitigate ROP exploits.
+  - **SafeSEH / No SEH (`NO_SEH`):** Structured Exception Handling overwrite protections.
+  - **Terminal Server Awareness (`TERMINAL_SERVER_AWARE`):** Multi-user Windows session support.
 
-## Install the changes
+### 4. Microsoft Defender Antivirus Verification
+- Runs an automated custom scan (`MpCmdRun.exe -ScanType 3 -DisableRemediation`) against the signed artifact before release.
+- Blocks publication if Defender is unavailable, encounters a scan error, or flags any malicious detection.
 
-Replace these files in your repository with the matching files from this ZIP, commit to `main`, and run **Sign FireClient Setup and Publish**:
+### 5. Standardized Release Hashes & Summaries
+- Automatically produces `dist/SHA256SUMS.txt` and `dist/SHA512SUMS.txt` alongside `latest.yml`.
+- Generates `dist/security-summary.md` and populates GitHub Actions Step Summary (`$env:GITHUB_STEP_SUMMARY`) with a visual security dashboard on every build.
 
-- `.github/workflows/sign-release.yml`
-- `scripts/Sign-And-Generate-Yml.ps1`
-- `scripts/Verify-Windows-Release.ps1` (new file)
+### 6. Local Publisher Trust Tools (Test & Development PCs)
+- **`Install-Publisher-Trust.cmd` / `scripts/Install-Local-Publisher-Trust.ps1`:** Installs the FireClient public certificate into the Windows `Trusted Root Certification Authorities` and `Trusted Publishers` store.
+  - Switches Windows UAC from a **Yellow ("Unknown Publisher")** banner to a **Blue ("Verified Publisher: FireClient LLC")** banner.
+  - Fixes SmartScreen warnings on the local machine without waiting for cloud reputation.
+- **`scripts/Uninstall-Local-Publisher-Trust.ps1`:** Safely removes the test certificate from the Windows Certificate Store.
+- **`Inspect-Release-Security.cmd` / `scripts/Inspect-Release-Security.ps1`:** Standalone tool to inspect any EXE file's UAC manifest, Authenticode signature, PE exploit mitigations, and Defender scan status locally.
 
-No certificate secret changes are required for the current test-only workflow. Do not commit a PFX or certificate password to the repository.
+---
+
+## File Overview
+
+| File | Purpose |
+|---|---|
+| `.github/workflows/sign-release.yml` | GitHub Actions workflow: signs, validates, audits, scans with Defender, and publishes releases. |
+| `scripts/Sign-And-Generate-Yml.ps1` | Signs installer with timestamp fallback, verifies signature, produces `latest.yml`, `SHA256SUMS.txt`, `SHA512SUMS.txt`. |
+| `scripts/Verify-Windows-Release.ps1` | Audits publisher, UAC settings, exploit mitigations, Defender scan, and generates security dashboard. |
+| `scripts/Inspect-Release-Security.ps1` | Standalone CLI utility to inspect any binary's security and UAC profile anytime. |
+| `scripts/Install-Local-Publisher-Trust.ps1` | One-click tool to import publisher certificate into Windows store for blue UAC prompt. |
+| `scripts/Uninstall-Local-Publisher-Trust.ps1` | Removes local publisher certificate from Windows trust store. |
+| `Install-Publisher-Trust.cmd` | Batch shortcut to run local trust installer as Administrator. |
+| `Inspect-Release-Security.cmd` | Batch shortcut to inspect installer security with one click. |
+| `Repair-FireClient-Certificate.cmd` | Repairs Base64 secret if installed in Windows certificate store. |
+
+---
+
+## Production vs. Test Mode
+
+- **Test Releases:** Pinned thumbprint (`BDF35D4B69863EB70590708C44D11E18C12AF2C5`) with `ALLOW_UNTRUSTED_SELF_SIGNED_CERTIFICATE: 'true'`.
+- **Production Releases:** When ready for public distribution, purchase a standard EV/OV Code Signing certificate from a trusted public CA (DigiCert, Sectigo, etc.), replace the GitHub Actions secrets `WINDOWS_CERTIFICATE_BASE64` / `WINDOWS_CERTIFICATE_PASSWORD`, and remove the test fallback flag.

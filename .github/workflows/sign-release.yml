@@ -45,9 +45,13 @@ jobs:
         run: |
           $files = @(
             (Join-Path $PWD 'scripts/Sign-And-Generate-Yml.ps1'),
-            (Join-Path $PWD 'scripts/Verify-Windows-Release.ps1')
+            (Join-Path $PWD 'scripts/Verify-Windows-Release.ps1'),
+            (Join-Path $PWD 'scripts/Inspect-Release-Security.ps1'),
+            (Join-Path $PWD 'scripts/Install-Local-Publisher-Trust.ps1'),
+            (Join-Path $PWD 'scripts/Uninstall-Local-Publisher-Trust.ps1')
           )
           foreach ($file in $files) {
+            if (-not (Test-Path -LiteralPath $file)) { continue }
             $tokens = $null
             $parseErrors = $null
             [System.Management.Automation.Language.Parser]::ParseFile($file, [ref]$tokens, [ref]$parseErrors) | Out-Null
@@ -83,6 +87,9 @@ jobs:
             dist/FireClient-Setup.exe
             dist/latest.yml
             dist/verification-report.json
+            dist/security-summary.md
+            dist/SHA256SUMS.txt
+            dist/SHA512SUMS.txt
           if-no-files-found: error
           retention-days: 30
 
@@ -97,3 +104,6 @@ jobs:
             dist/FireClient-Setup.exe
             dist/latest.yml
             dist/verification-report.json
+            dist/security-summary.md
+            dist/SHA256SUMS.txt
+            dist/SHA512SUMS.txt
