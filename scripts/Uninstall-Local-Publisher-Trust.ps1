@@ -1,5 +1,5 @@
 param(
-    [string]$Thumbprint = 'BDF35D4B69863EB70590708C44D11E18C12AF2C5'
+    [string]$Thumbprint = '91CECD221349B375AF5CBE1FC138015705C9FBC7'
 )
 
 $ErrorActionPreference = 'Stop'

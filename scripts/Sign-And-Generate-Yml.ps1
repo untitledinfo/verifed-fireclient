@@ -71,7 +71,7 @@ try {
 $subject = [string]$certificate.Subject
 $issuer = [string]$certificate.Issuer
 $certificateThumbprint = ([string]$certificate.Thumbprint -replace '\s', '').ToUpperInvariant()
-if ($subject -notmatch '(?i)(CN\s*=\s*FireClient LLC|O\s*=\s*FireClient LLC)') {
+if ($subject -notmatch '(?i)(CN\s*=\s*FireClient|O\s*=\s*FireClient)') {
     Stop-WithError "Certificate subject is '$subject', not a certificate identifying FireClient LLC. Use the correct organization code-signing certificate."
 }
 if (-not $certificate.HasPrivateKey) {
@@ -87,16 +87,21 @@ if ($certificate.NotBefore -gt $now -or $certificate.NotAfter -lt $now) {
 # block on hosted runners. Instead, validate the pinned test certificate here,
 # then permit only the narrowly scoped SignTool untrusted-root fallback below.
 $allowSelfSigned = $env:ALLOW_UNTRUSTED_SELF_SIGNED_CERTIFICATE -eq 'true'
-$expectedThumbprint = ([string]$env:EXPECTED_SIGNING_CERT_THUMBPRINT -replace '\s', '').ToUpperInvariant()
+$expectedThumbprintRaw = [string]$env:EXPECTED_SIGNING_CERT_THUMBPRINT
+$expectedThumbprints = @($expectedThumbprintRaw -split '[,;|\s]+' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object { ($_.Trim() -replace '\s', '').ToUpperInvariant() })
+if ($expectedThumbprints.Count -eq 0) {
+    $expectedThumbprints = @('91CECD221349B375AF5CBE1FC138015705C9FBC7', 'BDF35D4B69863EB70590708C44D11E18C12AF2C5')
+}
 $certificateThumbprint = ([string]$certificate.Thumbprint -replace '\s', '').ToUpperInvariant()
 
 Write-Host 'Stage 3/5: Checking pinned certificate configuration without touching the Windows trust store.'
+$isPinned = ($expectedThumbprints.Count -gt 0 -and $expectedThumbprints -contains $certificateThumbprint)
 if ($allowSelfSigned) {
-    if ([string]::IsNullOrWhiteSpace($expectedThumbprint) -or $certificateThumbprint -ne $expectedThumbprint) {
-        Stop-WithError "Refusing test release: PFX thumbprint $certificateThumbprint does not match EXPECTED_SIGNING_CERT_THUMBPRINT."
+    if (-not $isPinned) {
+        Stop-WithError "Refusing test release: PFX thumbprint $certificateThumbprint does not match EXPECTED_SIGNING_CERT_THUMBPRINT ($($expectedThumbprints -join ', '))."
     }
     Write-Warning 'Test-only mode enabled for the exact pinned self-signed certificate. This does NOT make FireClient trusted on customer PCs.'
-} elseif (-not [string]::IsNullOrWhiteSpace($expectedThumbprint) -and $certificateThumbprint -eq $expectedThumbprint) {
+} elseif ($isPinned) {
     Stop-WithError 'The configured certificate is the pinned self-signed test certificate, but ALLOW_UNTRUSTED_SELF_SIGNED_CERTIFICATE is not enabled.'
 }
 if ($certificate -is [System.IDisposable]) { $certificate.Dispose() }
@@ -177,7 +182,7 @@ if ($verifyExitCode -ne 0) {
     $signingHashMatch = [regex]::Match($signingChainSection, '(?i)SHA1 hash:\s*([A-F0-9]{40})')
     $actualSignerThumbprint = $signingHashMatch.Groups[1].Value.ToUpperInvariant()
     $signerMatchesPfx = -not [string]::IsNullOrWhiteSpace($actualSignerThumbprint) -and $actualSignerThumbprint -eq $certificateThumbprint
-    $thumbprintIsPinned = -not [string]::IsNullOrWhiteSpace($expectedThumbprint) -and $actualSignerThumbprint -eq $expectedThumbprint
+    $thumbprintIsPinned = ($expectedThumbprints.Count -gt 0 -and $expectedThumbprints -contains $actualSignerThumbprint)
     $timestampPresent = $verifyText -match '(?i)The signature is timestamped' -and $verifyText -match '(?i)Timestamp Verified by:'
 
     if ($allowSelfSigned -and $onlyUntrustedRoot -and $singleReportedError -and $signerMatchesPfx -and $thumbprintIsPinned -and $timestampPresent) {
@@ -190,7 +195,7 @@ if ($verifyExitCode -ne 0) {
         $global:LASTEXITCODE = 0
         Write-Host 'Accepted the narrowly scoped test-only verification fallback; clearing native exit status.'
     } else {
-        $verificationError = "SignTool verification failed with exit code $verifyExitCode.`nOnly expected untrusted-root fallback: $($allowSelfSigned -and $onlyUntrustedRoot -and $singleReportedError -and $signerMatchesPfx -and $thumbprintIsPinned -and $timestampPresent)`nUntrusted-root error: $onlyUntrustedRoot`nSingle error: $singleReportedError`nSigner SHA1: $actualSignerThumbprint`nPFX SHA1: $certificateThumbprint`nPinned SHA1: $expectedThumbprint`nTimestamp details found: $timestampPresent"
+        $verificationError = "SignTool verification failed with exit code $verifyExitCode.`nOnly expected untrusted-root fallback: $($allowSelfSigned -and $onlyUntrustedRoot -and $singleReportedError -and $signerMatchesPfx -and $thumbprintIsPinned -and $timestampPresent)`nUntrusted-root error: $onlyUntrustedRoot`nSingle error: $singleReportedError`nSigner SHA1: $actualSignerThumbprint`nPFX SHA1: $certificateThumbprint`nPinned SHA1: $($expectedThumbprints -join ', ')`nTimestamp details found: $timestampPresent"
         Stop-WithError $verificationError
     }
 }

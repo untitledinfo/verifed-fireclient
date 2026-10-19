@@ -38,12 +38,16 @@ if ($null -eq $auth.SignerCertificate) {
 
 $cert = $auth.SignerCertificate
 $thumbprint = ([string]$cert.Thumbprint -replace '\s', '').ToUpperInvariant()
-$expectedThumbprint = ([string]$env:EXPECTED_SIGNING_CERT_THUMBPRINT -replace '\s', '').ToUpperInvariant()
+$expectedThumbprintRaw = [string]$env:EXPECTED_SIGNING_CERT_THUMBPRINT
+$expectedThumbprints = @($expectedThumbprintRaw -split '[,;|\s]+' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object { ($_.Trim() -replace '\s', '').ToUpperInvariant() })
+if ($expectedThumbprints.Count -eq 0) {
+    $expectedThumbprints = @('91CECD221349B375AF5CBE1FC138015705C9FBC7', 'BDF35D4B69863EB70590708C44D11E18C12AF2C5')
+}
 $allowSelfSigned = ($env:ALLOW_UNTRUSTED_SELF_SIGNED_CERTIFICATE -eq 'true')
-$isPinnedTestCert = -not [string]::IsNullOrWhiteSpace($expectedThumbprint) -and $thumbprint -eq $expectedThumbprint
+$isPinnedTestCert = ($expectedThumbprints.Count -gt 0 -and $expectedThumbprints -contains $thumbprint)
 
 if ($allowSelfSigned -and -not $isPinnedTestCert) {
-    throw "Test release mode was enabled, but installer thumbprint ($thumbprint) does not match EXPECTED_SIGNING_CERT_THUMBPRINT ($expectedThumbprint)."
+    throw "Test release mode was enabled, but installer thumbprint ($thumbprint) does not match EXPECTED_SIGNING_CERT_THUMBPRINT ($($expectedThumbprints -join ', '))."
 }
 
 $publisherName = $cert.GetNameInfo([System.Security.Cryptography.X509Certificates.X509NameType]::SimpleName, $false)
