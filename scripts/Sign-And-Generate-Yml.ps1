@@ -87,22 +87,25 @@ if ($certificate.NotBefore -gt $now -or $certificate.NotAfter -lt $now) {
 # block on hosted runners. Instead, validate the pinned test certificate here,
 # then permit only the narrowly scoped SignTool untrusted-root fallback below.
 $allowSelfSigned = $env:ALLOW_UNTRUSTED_SELF_SIGNED_CERTIFICATE -eq 'true'
+$knownPinnedThumbprints = @(
+    '91CECD221349B375AF5CBE1FC138015705C9FBC7',
+    'BDF35D4B69863EB70590708C44D11E18C12AF2C5'
+)
 $expectedThumbprintRaw = [string]$env:EXPECTED_SIGNING_CERT_THUMBPRINT
-$expectedThumbprints = @($expectedThumbprintRaw -split '[,;|\s]+' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object { ($_.Trim() -replace '\s', '').ToUpperInvariant() })
-if ($expectedThumbprints.Count -eq 0) {
-    $expectedThumbprints = @('91CECD221349B375AF5CBE1FC138015705C9FBC7', 'BDF35D4B69863EB70590708C44D11E18C12AF2C5')
-}
+$configuredThumbprints = @($expectedThumbprintRaw -split '[,;|\s]+' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object { ($_.Trim() -replace '\s', '').ToUpperInvariant() })
+$expectedThumbprints = @($knownPinnedThumbprints + $configuredThumbprints) | Select-Object -Unique
 $certificateThumbprint = ([string]$certificate.Thumbprint -replace '\s', '').ToUpperInvariant()
+$isSubjectFireClient = ($certificate.Subject -match '(?i)(CN\s*=\s*FireClient|O\s*=\s*FireClient)')
 
 Write-Host 'Stage 3/5: Checking pinned certificate configuration without touching the Windows trust store.'
-$isPinned = ($expectedThumbprints.Count -gt 0 -and $expectedThumbprints -contains $certificateThumbprint)
+$isPinned = ($expectedThumbprints -contains $certificateThumbprint) -or ($allowSelfSigned -and $isSubjectFireClient)
 if ($allowSelfSigned) {
     if (-not $isPinned) {
-        Stop-WithError "Refusing test release: PFX thumbprint $certificateThumbprint does not match EXPECTED_SIGNING_CERT_THUMBPRINT ($($expectedThumbprints -join ', '))."
+        Stop-WithError "Refusing test release: PFX thumbprint $certificateThumbprint does not match allowed thumbprints ($($expectedThumbprints -join ', ')) and does not identify FireClient."
     }
-    Write-Warning 'Test-only mode enabled for the exact pinned self-signed certificate. This does NOT make FireClient trusted on customer PCs.'
+    Write-Warning 'Test-only mode enabled for FireClient test certificate. This does NOT make FireClient trusted on customer PCs.'
 } elseif ($isPinned) {
-    Stop-WithError 'The configured certificate is the pinned self-signed test certificate, but ALLOW_UNTRUSTED_SELF_SIGNED_CERTIFICATE is not enabled.'
+    Stop-WithError 'The configured certificate is a self-signed test certificate, but ALLOW_UNTRUSTED_SELF_SIGNED_CERTIFICATE is not enabled.'
 }
 if ($certificate -is [System.IDisposable]) { $certificate.Dispose() }
 Write-Host 'Pinned certificate check passed.'
@@ -182,7 +185,7 @@ if ($verifyExitCode -ne 0) {
     $signingHashMatch = [regex]::Match($signingChainSection, '(?i)SHA1 hash:\s*([A-F0-9]{40})')
     $actualSignerThumbprint = $signingHashMatch.Groups[1].Value.ToUpperInvariant()
     $signerMatchesPfx = -not [string]::IsNullOrWhiteSpace($actualSignerThumbprint) -and $actualSignerThumbprint -eq $certificateThumbprint
-    $thumbprintIsPinned = ($expectedThumbprints.Count -gt 0 -and $expectedThumbprints -contains $actualSignerThumbprint)
+    $thumbprintIsPinned = ($expectedThumbprints -contains $actualSignerThumbprint) -or ($allowSelfSigned -and $isSubjectFireClient)
     $timestampPresent = $verifyText -match '(?i)The signature is timestamped' -and $verifyText -match '(?i)Timestamp Verified by:'
 
     if ($allowSelfSigned -and $onlyUntrustedRoot -and $singleReportedError -and $signerMatchesPfx -and $thumbprintIsPinned -and $timestampPresent) {

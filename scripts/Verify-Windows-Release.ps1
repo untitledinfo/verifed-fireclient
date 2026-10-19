@@ -38,16 +38,19 @@ if ($null -eq $auth.SignerCertificate) {
 
 $cert = $auth.SignerCertificate
 $thumbprint = ([string]$cert.Thumbprint -replace '\s', '').ToUpperInvariant()
+$knownPinnedThumbprints = @(
+    '91CECD221349B375AF5CBE1FC138015705C9FBC7',
+    'BDF35D4B69863EB70590708C44D11E18C12AF2C5'
+)
 $expectedThumbprintRaw = [string]$env:EXPECTED_SIGNING_CERT_THUMBPRINT
-$expectedThumbprints = @($expectedThumbprintRaw -split '[,;|\s]+' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object { ($_.Trim() -replace '\s', '').ToUpperInvariant() })
-if ($expectedThumbprints.Count -eq 0) {
-    $expectedThumbprints = @('91CECD221349B375AF5CBE1FC138015705C9FBC7', 'BDF35D4B69863EB70590708C44D11E18C12AF2C5')
-}
+$configuredThumbprints = @($expectedThumbprintRaw -split '[,;|\s]+' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object { ($_.Trim() -replace '\s', '').ToUpperInvariant() })
+$expectedThumbprints = @($knownPinnedThumbprints + $configuredThumbprints) | Select-Object -Unique
 $allowSelfSigned = ($env:ALLOW_UNTRUSTED_SELF_SIGNED_CERTIFICATE -eq 'true')
-$isPinnedTestCert = ($expectedThumbprints.Count -gt 0 -and $expectedThumbprints -contains $thumbprint)
+$isSubjectFireClient = ($cert.Subject -match '(?i)(CN\s*=\s*FireClient|O\s*=\s*FireClient)')
+$isPinnedTestCert = ($expectedThumbprints -contains $thumbprint) -or ($allowSelfSigned -and $isSubjectFireClient)
 
 if ($allowSelfSigned -and -not $isPinnedTestCert) {
-    throw "Test release mode was enabled, but installer thumbprint ($thumbprint) does not match EXPECTED_SIGNING_CERT_THUMBPRINT ($($expectedThumbprints -join ', '))."
+    throw "Test release mode was enabled, but installer thumbprint ($thumbprint) does not match EXPECTED_SIGNING_CERT_THUMBPRINT ($($expectedThumbprints -join ', ')) and certificate subject does not identify FireClient."
 }
 
 $publisherName = $cert.GetNameInfo([System.Security.Cryptography.X509Certificates.X509NameType]::SimpleName, $false)

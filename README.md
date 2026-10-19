@@ -59,5 +59,5 @@ This release upgrades the security, User Account Control (UAC), Authenticode pub
 
 ## Production vs. Test Mode
 
-- **Test Releases:** Pinned thumbprint (`BDF35D4B69863EB70590708C44D11E18C12AF2C5`) with `ALLOW_UNTRUSTED_SELF_SIGNED_CERTIFICATE: 'true'`.
+- **Test Releases:** Pinned thumbprints (`91CECD221349B375AF5CBE1FC138015705C9FBC7`, `BDF35D4B69863EB70590708C44D11E18C12AF2C5`) with `ALLOW_UNTRUSTED_SELF_SIGNED_CERTIFICATE: 'true'`.
 - **Production Releases:** When ready for public distribution, purchase a standard EV/OV Code Signing certificate from a trusted public CA (DigiCert, Sectigo, etc.), replace the GitHub Actions secrets `WINDOWS_CERTIFICATE_BASE64` / `WINDOWS_CERTIFICATE_PASSWORD`, and remove the test fallback flag.
