@@ -238,20 +238,34 @@ Write-Host "Installer signature checked; generated updater metadata for: $distEx
 Write-Host "Generated updater metadata: $latestYml"
 Write-Host "Version: $version | Size: $size bytes | SHA-512: $sha512"
 
-# Generate standard checksum manifests
+# Generate standard checksum manifests and stage portable archive if present
 $sha256Hex = (Get-FileHash -LiteralPath $distExe -Algorithm SHA256).Hash.ToLowerInvariant()
 $sha512Hex = (Get-FileHash -LiteralPath $distExe -Algorithm SHA512).Hash.ToLowerInvariant()
 $ymlSha256 = (Get-FileHash -LiteralPath $latestYml -Algorithm SHA256).Hash.ToLowerInvariant()
 
-$sha256Sums = Join-Path $distDir 'SHA256SUMS.txt'
-$sha512Sums = Join-Path $distDir 'SHA512SUMS.txt'
+$exeSha256File = Join-Path $distDir 'FireClient-Setup.exe.sha256'
+[IO.File]::WriteAllText($exeSha256File, "$sha256Hex  FireClient-Setup.exe`n", [Text.UTF8Encoding]::new($false))
 
 $sha256Content = "$sha256Hex *FireClient-Setup.exe`n$ymlSha256 *latest.yml`n"
 $sha512Content = "$sha512Hex *FireClient-Setup.exe`n"
 
+$sourcePortable = Join-Path $repoRoot 'release/FireClient-portable.zip'
+$distPortable = Join-Path $distDir 'FireClient-portable.zip'
+if (Test-Path -LiteralPath $sourcePortable -PathType Leaf) {
+    Copy-Item -LiteralPath $sourcePortable -Destination $distPortable -Force
+    $zipSha256 = (Get-FileHash -LiteralPath $distPortable -Algorithm SHA256).Hash.ToLowerInvariant()
+    $zipSha512 = (Get-FileHash -LiteralPath $distPortable -Algorithm SHA512).Hash.ToLowerInvariant()
+    $sha256Content += "$zipSha256 *FireClient-portable.zip`n"
+    $sha512Content += "$zipSha512 *FireClient-portable.zip`n"
+    Write-Host "Staged portable archive: $distPortable (SHA-256: $zipSha256)"
+}
+
+$sha256Sums = Join-Path $distDir 'SHA256SUMS.txt'
+$sha512Sums = Join-Path $distDir 'SHA512SUMS.txt'
+
 [IO.File]::WriteAllText($sha256Sums, $sha256Content, [Text.UTF8Encoding]::new($false))
 [IO.File]::WriteAllText($sha512Sums, $sha512Content, [Text.UTF8Encoding]::new($false))
-Write-Host "Generated checksum files: $sha256Sums, $sha512Sums"
+Write-Host "Generated checksum files: $exeSha256File, $sha256Sums, $sha512Sums"
 
 Remove-Item -LiteralPath $certPath -Force -ErrorAction SilentlyContinue
 

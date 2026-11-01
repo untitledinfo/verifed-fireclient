@@ -1,0 +1,1409 @@
+/* ==========================================================================
+   FireClient Light Mode Theme (fc-light.css)
+   Pure Gaming Performance & Clean Studio Contrast for Bright Environments.
+   Loaded after fc-v5.css — overrides all dark presets when [data-theme="light"]
+   ========================================================================== */
+
+:root[data-theme="light"],
+html[data-theme="light"],
+body[data-theme="light"] {
+  color-scheme: light;
+
+  /* Base palette tokens */
+  --fc-l-bg-0: #f1f5f9;       /* Slate 100 base canvas */
+  --fc-l-bg-1: #ffffff;       /* Pure white panels */
+  --fc-l-bg-2: #f8fafc;       /* Slate 50 subtle elevation */
+  --fc-l-bg-3: #e2e8f0;       /* Slate 200 borders/chips */
+  --fc-l-bg-hover: #f1f5f9;
+
+  --fc-l-t1: #0f172a;         /* Slate 900 primary text (ultra-sharp) */
+  --fc-l-t2: #334155;         /* Slate 700 secondary text */
+  --fc-l-t3: #64748b;         /* Slate 500 tertiary/sub text */
+  --fc-l-t4: #94a3b8;         /* Slate 400 placeholder/faint text */
+
+  --fc-l-line: rgba(0, 0, 0, 0.09);
+  --fc-l-line-hi: rgba(var(--fc-rgb, 229, 36, 45), 0.65);
+  --fc-l-line-subtle: rgba(0, 0, 0, 0.05);
+
+  --fc-l-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+  --fc-l-shadow-lg: 0 16px 40px rgba(15, 23, 42, 0.12);
+
+  /* Override internal engine tokens */
+  --fc-panel: #ffffff !important;
+  --fc-panel-hi: #f8fafc !important;
+  --fc-line: rgba(0, 0, 0, 0.09) !important;
+  --fc-line-2: rgba(0, 0, 0, 0.14) !important;
+
+  --v3-bg: #f1f5f9 !important;
+  --v3-panel: #ffffff !important;
+  --v3-panel-2: #f8fafc !important;
+  --v3-line: rgba(0, 0, 0, 0.09) !important;
+  --v3-line-hi: rgba(var(--fc-rgb, 229, 36, 45), 0.65) !important;
+  --v3-t1: #0f172a !important;
+  --v3-t2: #334155 !important;
+  --v3-t3: #64748b !important;
+
+  --su-bg0: #f1f5f9 !important;
+  --su-bg1: #ffffff !important;
+  --su-bg2: #f8fafc !important;
+  --su-bg3: #e2e8f0 !important;
+  --su-border: rgba(0, 0, 0, 0.09) !important;
+  --su-border-hi: rgba(var(--fc-rgb, 229, 36, 45), 0.5) !important;
+  --su-t1: #0f172a !important;
+  --su-t2: #334155 !important;
+  --su-t3: #64748b !important;
+  --su-t4: #94a3b8 !important;
+
+  /* Icon tokens in light mode: deep contrasting slate body + glowing fire red detail */
+  --fc-ic-a: #1e293b !important;
+  --fc-ic-b: var(--fc-a, #e5242d) !important;
+  --fc-ic-c: #475569 !important;
+  --fc-ic-d: #ffffff !important;
+
+  accent-color: var(--fc-a, #e5242d) !important;
+}
+
+/* ==========================================================================
+   1. CANVAS, BACKGROUND & ROOT FRAMES (Polar Cyber White Edition)
+   ========================================================================== */
+body[data-theme="light"],
+body[data-theme="light"] #window-frame {
+  background: #f1f5f9 !important;
+  background-image: none !important;
+  color: #0f172a !important;
+}
+
+body[data-theme="light"] #fc-bg {
+  background: radial-gradient(ellipse 65% 55% at 50% 38%, rgba(229, 36, 45, 0.08) 0%, transparent 68%),
+              radial-gradient(circle at 82% 20%, rgba(255, 107, 74, 0.06) 0%, transparent 45%),
+              linear-gradient(180deg, #f8fafc 0%, #eef2f6 45%, #e2e8f0 100%) !important;
+  filter: none !important;
+  opacity: 1 !important;
+}
+
+body[data-theme="light"] #fc-bg::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background-image: radial-gradient(circle, rgba(15, 23, 42, 0.065) 1.2px, transparent 1.2px) !important;
+  background-size: 26px 26px !important;
+  opacity: 1 !important;
+  pointer-events: none !important;
+}
+
+body[data-theme="light"] #fc-bg::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background: radial-gradient(ellipse 70% 50% at 50% 80%, rgba(229, 36, 45, 0.07) 0%, transparent 70%) !important;
+  pointer-events: none !important;
+}
+
+body[data-theme="light"].fc-home-active #fc-bg::after {
+  background: radial-gradient(ellipse 65% 55% at 50% 50%, rgba(229, 36, 45, 0.10) 0%, transparent 70%) !important;
+}
+
+body[data-theme="light"] #simple-ui-root {
+  background-image: none !important;
+  color: #0f172a !important;
+}
+
+/* ==========================================================================
+   2. TITLE BAR & TOP BAR (Tactical Frosted Glass & Cyber Bevels)
+   ========================================================================== */
+body[data-theme="light"] #titlebar {
+  background: rgba(255, 255, 255, 0.98) !important;
+  backdrop-filter: blur(12px) !important;
+  border-bottom: 1.5px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 1px 6px rgba(15, 23, 42, 0.04) !important;
+}
+
+body[data-theme="light"] .tl-logo-text {
+  font-family: var(--fc-display), 'Barlow', system-ui, sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 15px !important;
+  letter-spacing: 0.06em !important;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+}
+
+body[data-theme="light"] .tl-brand-logo {
+  color: var(--fc-a, #e5242d) !important;
+  fill: var(--fc-a, #e5242d) !important;
+}
+
+body[data-theme="light"] .wb {
+  color: #475569 !important;
+  border-radius: 4px !important;
+  transition: all 0.15s ease !important;
+}
+
+body[data-theme="light"] .wb:hover {
+  background: rgba(15, 23, 42, 0.07) !important;
+  color: #0f172a !important;
+}
+
+body[data-theme="light"] .wb.cl:hover {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+}
+
+body[data-theme="light"] .su-topbar {
+  background: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(16px) !important;
+  border-bottom: 1.5px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: inset 0 -2px 0 var(--fc-a, #e5242d), 0 3px 12px rgba(15, 23, 42, 0.04) !important;
+}
+
+body[data-theme="light"] .su-tb-brand .fc-site {
+  color: #0f172a !important;
+  font-weight: 800 !important;
+}
+
+body[data-theme="light"] .su-tb-brand .fc-site i {
+  color: var(--fc-a, #e5242d) !important;
+}
+
+body[data-theme="light"] .su-tb-btn,
+body[data-theme="light"] .su-tb-acct,
+body[data-theme="light"] #su-tb-density,
+body[data-theme="light"] .su-tb-inst-btn {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+  border: 1.5px solid rgba(0, 0, 0, 0.12) !important;
+  border-radius: 8px !important;
+  color: #1e293b !important;
+  font-family: var(--fc-display), 'Barlow', system-ui, sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 11.5px !important;
+  letter-spacing: 0.06em !important;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04), inset 0 1px 0 #ffffff !important;
+  transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+body[data-theme="light"] .su-tb-btn:hover,
+body[data-theme="light"] .su-tb-acct:hover,
+body[data-theme="light"] #su-tb-density:hover,
+body[data-theme="light"] .su-tb-inst-btn:hover {
+  background: #ffffff !important;
+  border-color: var(--fc-a, #e5242d) !important;
+  color: var(--fc-a, #e5242d) !important;
+  box-shadow: 0 4px 14px rgba(229, 36, 45, 0.20), inset 0 1px 0 #ffffff !important;
+  transform: translateY(-1px) !important;
+}
+
+body[data-theme="light"] .su-history-btn {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  color: #475569 !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+  border-radius: 6px !important;
+}
+
+body[data-theme="light"] .su-history-btn:hover:not([disabled]) {
+  border-color: var(--fc-a, #e5242d) !important;
+  color: var(--fc-a, #e5242d) !important;
+  background: #ffffff !important;
+}
+
+body[data-theme="light"] .su-tb-btn svg,
+body[data-theme="light"] .su-tb-acct svg {
+  color: #475569 !important;
+  stroke: currentColor !important;
+}
+
+body[data-theme="light"] .su-tb-btn:hover svg,
+body[data-theme="light"] .su-tb-acct:hover svg {
+  color: var(--fc-a, #e5242d) !important;
+  stroke: var(--fc-a, #e5242d) !important;
+}
+
+/* ==========================================================================
+   3. SIDEBAR NAVIGATION & ICON SHOW SYSTEM
+   ========================================================================== */
+body[data-theme="light"] .su-nav {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border-right: 1.5px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 3px 0 20px rgba(15, 23, 42, 0.03) !important;
+}
+
+body[data-theme="light"] .su-nav-brand .name {
+  font-family: var(--fc-display), 'Barlow', system-ui, sans-serif !important;
+  font-weight: 800 !important;
+  color: #0f172a !important;
+}
+
+body[data-theme="light"] .su-nav-brand .name .tag {
+  color: #64748b !important;
+  font-weight: 700 !important;
+}
+
+body[data-theme="light"] .su-nav-brand .logo svg {
+  color: var(--fc-a, #e5242d) !important;
+}
+
+body[data-theme="light"] .su-nav-group-title {
+  color: #94a3b8 !important;
+  font-family: var(--fc-display), 'Barlow', system-ui, sans-serif !important;
+  font-size: 10px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.18em !important;
+  text-transform: uppercase !important;
+  padding: 6px 14px 4px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+body[data-theme="light"] .su-nav-group-title::before {
+  content: "" !important;
+  width: 4px !important;
+  height: 4px !important;
+  border-radius: 50% !important;
+  background: var(--fc-a, #e5242d) !important;
+  opacity: 0.8 !important;
+}
+
+body[data-theme="light"] .su-nav-item {
+  color: #334155 !important;
+  font-family: var(--fc-display), 'Barlow', system-ui, sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 14.5px !important;
+  letter-spacing: 0.03em !important;
+  border-radius: 8px !important;
+  margin: 2px 8px !important;
+  padding: 7px 12px !important;
+  transition: all 0.16s ease !important;
+}
+
+body[data-theme="light"] .su-nav-item:hover {
+  background: rgba(15, 23, 42, 0.04) !important;
+  color: #0f172a !important;
+  transform: translateX(2px) !important;
+}
+
+body[data-theme="light"] .su-nav-item.active {
+  background: linear-gradient(90deg, rgba(var(--fc-rgb, 229, 36, 45), 0.12) 0%, rgba(var(--fc-rgb, 229, 36, 45), 0.01) 100%) !important;
+  border-left: 3px solid var(--fc-a, #e5242d) !important;
+  color: var(--fc-a, #e5242d) !important;
+  font-weight: 800 !important;
+  box-shadow: 0 2px 8px rgba(var(--fc-rgb, 229, 36, 45), 0.10) !important;
+}
+
+/* Ensure ALL icons across FireClient show with ultra-vivid contrast in Light Mode */
+body[data-theme="light"] .fc-ic {
+  color: #1e293b !important;
+  --fc-ic-b: var(--fc-a, #e5242d) !important;
+  opacity: 0.95 !important;
+  filter: drop-shadow(0 1px 1px rgba(15, 23, 42, 0.08)) !important;
+}
+
+body[data-theme="light"] .su-nav-item .fc-ic {
+  color: #1e293b !important;
+  --fc-ic-b: var(--fc-a, #e5242d) !important;
+  opacity: 0.92 !important;
+  filter: drop-shadow(0 1px 1px rgba(15, 23, 42, 0.08)) !important;
+  transition: transform 0.16s ease, filter 0.16s ease, opacity 0.16s ease !important;
+}
+
+body[data-theme="light"] .su-nav-item:hover .fc-ic {
+  color: #0f172a !important;
+  --fc-ic-b: #ff3b30 !important;
+  opacity: 1 !important;
+  filter: drop-shadow(0 1px 2px rgba(229, 36, 45, 0.35)) !important;
+  transform: scale(1.06);
+}
+
+body[data-theme="light"] .su-nav-item.active .fc-ic {
+  color: #0f172a !important;
+  --fc-ic-b: var(--fc-a, #e5242d) !important;
+  opacity: 1 !important;
+  filter: drop-shadow(0 2px 5px rgba(229, 36, 45, 0.45)) !important;
+}
+
+body[data-theme="light"] .su-quick-tile .fc-ic {
+  color: #1e293b !important;
+  --fc-ic-b: var(--fc-a, #e5242d) !important;
+  opacity: 0.95 !important;
+  transition: transform 0.16s ease, filter 0.16s ease !important;
+}
+
+body[data-theme="light"] .su-quick-tile:hover .fc-ic {
+  color: #0f172a !important;
+  --fc-ic-b: #ff3b30 !important;
+  opacity: 1 !important;
+  filter: drop-shadow(0 2px 6px rgba(229, 36, 45, 0.35)) !important;
+  transform: scale(1.08);
+}
+
+body[data-theme="light"] .su-nav-item svg:not(.fc-ic) {
+  color: #475569 !important;
+  stroke: #475569 !important;
+}
+
+body[data-theme="light"] .su-nav-item:hover svg:not(.fc-ic) {
+  color: #0f172a !important;
+  stroke: #0f172a !important;
+}
+
+body[data-theme="light"] .su-nav-item.active svg:not(.fc-ic) {
+  color: var(--fc-a, #e5242d) !important;
+  stroke: var(--fc-a, #e5242d) !important;
+}
+
+body[data-theme="light"] .su-nav-item .badge {
+  background: rgba(var(--fc-rgb, 229, 36, 45), 0.12) !important;
+  color: var(--fc-a, #e5242d) !important;
+  font-weight: 800 !important;
+}
+
+/* ==========================================================================
+   4. HEADINGS, TEXT & BREADCRUMBS
+   ========================================================================== */
+body[data-theme="light"] .su-page-title,
+body[data-theme="light"] .su-page-title * {
+  background: none !important;
+  -webkit-background-clip: border-box !important;
+  background-clip: border-box !important;
+  -webkit-text-fill-color: #0f172a !important;
+  color: #0f172a !important;
+}
+
+body[data-theme="light"] :is(.fc-perf-card, .fc-pm, .fc-doc-row, .fc-lib-row, .su-kpi-card, .fc-dc, .su-srv-card, .su-world-card, .su-ver-row) :is(b, strong, .name, .title, .t) {
+  color: #0f172a !important;
+}
+
+body[data-theme="light"] :is(.fc-perf-card, .fc-pm, .fc-doc-row, .fc-lib-row, .su-kpi-card, .fc-dc, .su-srv-card, .su-world-card, .su-ver-row) :is(span.d, div.s, .desc, .sub, small, .fc-meta, .ad) {
+  color: #64748b !important;
+}
+
+body[data-theme="light"] .su-page-sub {
+  color: #64748b !important;
+}
+
+body[data-theme="light"] .su-section-head h2 {
+  color: #0f172a !important;
+}
+
+body[data-theme="light"] .su-section-head h2::before {
+  background: var(--fc-a, #e5242d) !important;
+  box-shadow: 2px 2px 0 rgba(var(--fc-rgb, 229, 36, 45), 0.25) !important;
+}
+
+body[data-theme="light"] .su-settings-section h3 {
+  color: var(--fc-a, #e5242d) !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.16em !important;
+}
+
+body[data-theme="light"] .su-setting-row .meta .name {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+body[data-theme="light"] .su-setting-row .meta .desc,
+body[data-theme="light"] #fc-cape-desc {
+  color: #64748b !important;
+}
+
+body[data-theme="light"] .su-setting-row + .su-setting-row {
+  border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+body[data-theme="light"] .su-back-pill {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  color: #334155 !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+}
+
+body[data-theme="light"] .su-back-pill:hover {
+  background: #f8fafc !important;
+  border-color: var(--fc-a, #e5242d) !important;
+  color: var(--fc-a, #e5242d) !important;
+}
+
+body[data-theme="light"] .su-back-pill svg {
+  stroke: currentColor !important;
+}
+
+/* ==========================================================================
+   5. CARDS, PANELS, SURFACES & NOTCHED BOXES
+   ========================================================================== */
+body[data-theme="light"] :is(.su-ver-row, .su-kpi-card, .su-settings-section, .fc-pm, .fc-perf-card,
+  .su-ver-install-card, .su-world-card, .su-srv-card, .su-pack-card, .su-pack-row, .su-mr-item, .su-acct-card,
+  .su-act-tile, .su-folder-tile, .su-news-card, .su-screen-tile, .fc-uv, .fc-prof, .su-panel, .fc-dc, .fc3-card,
+  .fc-sel, .su-card, .su-box, .inst-card, .play-qa-tile, .play-stat-chip, .user-chip, .cm-box, .aam-box) {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  border: 1px solid rgba(0, 0, 0, 0.10) !important;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04) !important;
+  color: #0f172a !important;
+}
+
+/* Quick Tiles: Tactical Cybernetic Modules (Home Grid) */
+body[data-theme="light"] .su-quick-tile {
+  position: relative !important;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+  border: 1.5px solid rgba(15, 23, 42, 0.10) !important;
+  border-radius: 8px !important;
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%) !important;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04), inset 0 1px 0 #ffffff !important;
+  padding: 14px 10px 12px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.18s ease !important;
+  overflow: hidden !important;
+  cursor: pointer !important;
+}
+
+body[data-theme="light"] .su-quick-tile::before {
+  content: "" !important;
+  position: absolute !important;
+  top: 0 !important;
+  right: 0 !important;
+  width: 14px !important;
+  height: 14px !important;
+  background: linear-gradient(135deg, transparent 50%, rgba(229, 36, 45, 0.70) 50%) !important;
+  pointer-events: none !important;
+  transition: background 0.18s ease !important;
+}
+
+body[data-theme="light"] .su-quick-tile:hover {
+  transform: translateY(-4px) !important;
+  border-color: var(--fc-a, #e5242d) !important;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08), 0 0 16px rgba(var(--fc-rgb, 229, 36, 45), 0.24), inset 0 1px 0 #ffffff !important;
+}
+
+body[data-theme="light"] .su-quick-tile:hover::before {
+  background: linear-gradient(135deg, transparent 50%, var(--fc-a, #e5242d) 50%) !important;
+}
+
+body[data-theme="light"] .su-quick-tile .fc-ic {
+  width: 32px !important;
+  height: 32px !important;
+  padding: 6px !important;
+  background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%) !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 5px rgba(15, 23, 42, 0.05), inset 0 1px 0 #ffffff !important;
+  color: #0f172a !important;
+  --fc-ic-b: var(--fc-a, #e5242d) !important;
+  margin-bottom: 2px !important;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+body[data-theme="light"] .su-quick-tile:hover .fc-ic {
+  background: linear-gradient(135deg, rgba(229, 36, 45, 0.14) 0%, rgba(229, 36, 45, 0.04) 100%) !important;
+  border-color: rgba(229, 36, 45, 0.5) !important;
+  transform: scale(1.12) !important;
+  box-shadow: 0 4px 12px rgba(229, 36, 45, 0.28) !important;
+}
+
+body[data-theme="light"] .su-quick-tile .lbl {
+  font-family: var(--fc-display), 'Barlow', system-ui, sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 11.5px !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  color: #1e293b !important;
+  transition: color 0.15s ease !important;
+}
+
+body[data-theme="light"] .su-quick-tile:hover .lbl {
+  color: var(--fc-a, #e5242d) !important;
+}
+
+/* Hover on interactive cards */
+body[data-theme="light"] :is(.su-ver-row, .su-world-card, .su-srv-card, .su-pack-card, .su-pack-row,
+  .su-mr-item, .su-act-tile, .su-folder-tile, .su-screen-tile, .su-ver-install-card, .fc3-card, .inst-card):hover {
+  background-color: #ffffff !important;
+  border-color: rgba(var(--fc-rgb, 229, 36, 45), 0.65) !important;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08), 0 0 12px rgba(var(--fc-rgb, 229, 36, 45), 0.12) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Active / selected card state */
+body[data-theme="light"] .su-ver-row.sel,
+body[data-theme="light"] .su-acct-card.active,
+body[data-theme="light"] .su-acct-row.active {
+  border: 2px solid var(--fc-a, #e5242d) !important;
+  background-color: #fff9f9 !important;
+  box-shadow: 0 4px 18px rgba(var(--fc-rgb, 229, 36, 45), 0.18), inset 3px 0 0 var(--fc-a, #e5242d) !important;
+}
+
+body[data-theme="light"] .su-kpi-card {
+  border-left: 3px solid var(--fc-a, #e5242d) !important;
+}
+
+body[data-theme="light"] .su-act-tile .ico,
+body[data-theme="light"] .su-hero .icon {
+  background: rgba(var(--fc-rgb, 229, 36, 45), 0.12) !important;
+}
+
+/* Version cards icon headers in light mode */
+body[data-theme="light"] .su-ver-row .ico {
+  background: repeating-conic-gradient(rgba(0, 0, 0, 0.03) 0 25%, transparent 0 50%) 0 0/18px 18px, linear-gradient(135deg, #f1f5f9, #e2e8f0) !important;
+  filter: none !important;
+}
+
+body[data-theme="light"] .su-ver-row.fabric .ico {
+  background: repeating-conic-gradient(rgba(0, 0, 0, 0.03) 0 25%, transparent 0 50%) 0 0/18px 18px, linear-gradient(135deg, #fef3c7, #fde68a) !important;
+}
+
+body[data-theme="light"] .su-ver-row.forge .ico {
+  background: repeating-conic-gradient(rgba(0, 0, 0, 0.03) 0 25%, transparent 0 50%) 0 0/18px 18px, linear-gradient(135deg, #e0e7ff, #c7d2fe) !important;
+}
+
+body[data-theme="light"] .su-ver-row.neoforge .ico {
+  background: repeating-conic-gradient(rgba(0, 0, 0, 0.03) 0 25%, transparent 0 50%) 0 0/18px 18px, linear-gradient(135deg, #ffedd5, #fed7aa) !important;
+}
+
+body[data-theme="light"] .su-ver-row.quilt .ico {
+  background: repeating-conic-gradient(rgba(0, 0, 0, 0.03) 0 25%, transparent 0 50%) 0 0/18px 18px, linear-gradient(135deg, #f3e8ff, #e9d5ff) !important;
+}
+
+body[data-theme="light"] .su-ver-install-card.neoforge .ico {
+  background: repeating-conic-gradient(rgba(0, 0, 0, 0.03) 0 25%, transparent 0 50%) 0 0/18px 18px, linear-gradient(135deg, #ffedd5, #fed7aa) !important;
+}
+
+body[data-theme="light"] .su-ver-install-card.quilt .ico {
+  background: repeating-conic-gradient(rgba(0, 0, 0, 0.03) 0 25%, transparent 0 50%) 0 0/18px 18px, linear-gradient(135deg, #f3e8ff, #e9d5ff) !important;
+}
+
+/* ==========================================================================
+   6. ULTRA GAMING BUTTONS IN LIGHT MODE
+   ========================================================================== */
+/* Secondary gaming buttons */
+body[data-theme="light"] .su-btn:not(.primary):not(.danger),
+body[data-theme="light"] .fc-rpc-card-btn:not(.primary),
+body[data-theme="light"] .dialog-btn:not(.primary),
+body[data-theme="light"] .inst-new-btn,
+body[data-theme="light"] .fc-host-action-btn:not(.primary),
+body[data-theme="light"] .fcn-m-btn:not(.primary),
+body[data-theme="light"] .auth-btn:not(.primary),
+body[data-theme="light"] .cm-btn:not(.primary),
+body[data-theme="light"] .fc-console-toolbar .su-btn,
+body[data-theme="light"] .fc-console-state-actions .su-btn {
+  background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%) !important;
+  border: 1.5px solid rgba(var(--fc-rgb, 229, 36, 45), 0.45) !important;
+  color: #0f172a !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06), inset 0 1px 0 #ffffff !important;
+}
+
+body[data-theme="light"] .su-btn:not(.primary):not(.danger):hover,
+body[data-theme="light"] .fc-rpc-card-btn:not(.primary):hover,
+body[data-theme="light"] .dialog-btn:not(.primary):hover,
+body[data-theme="light"] .inst-new-btn:hover,
+body[data-theme="light"] .fc-host-action-btn:not(.primary):hover,
+body[data-theme="light"] .fcn-m-btn:not(.primary):hover,
+body[data-theme="light"] .auth-btn:not(.primary):hover,
+body[data-theme="light"] .cm-btn:not(.primary):hover,
+body[data-theme="light"] .fc-console-toolbar .su-btn:hover {
+  background: linear-gradient(180deg, rgba(var(--fc-rgb, 229, 36, 45), 0.10) 0%, #ffffff 100%) !important;
+  border-color: var(--fc-a, #e5242d) !important;
+  color: var(--fc-a, #e5242d) !important;
+  box-shadow: 0 4px 16px rgba(var(--fc-rgb, 229, 36, 45), 0.22), inset 0 1px 0 #ffffff !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Primary gaming action buttons: intense signature fire gradient */
+body[data-theme="light"] .su-btn.primary,
+body[data-theme="light"] .cm-btn-primary,
+body[data-theme="light"] .fcn-m-btn.primary,
+body[data-theme="light"] .fc-rpc-card-btn.primary,
+body[data-theme="light"] .su-ver-install-card button.go:not(.prev),
+body[data-theme="light"] .su-mr-search .go,
+body[data-theme="light"] .mr-ver-dl,
+body[data-theme="light"] .mr-install-btn,
+body[data-theme="light"] .np-btn.pri,
+body[data-theme="light"] .su-mr-item .ibtn:not(.installed),
+body[data-theme="light"] .play-btn {
+  background: linear-gradient(135deg, var(--fc-a2, #ff4d4a) 0%, var(--fc-a, #e5242d) 50%, var(--fc-a6, #b3141c) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.45) !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  box-shadow: 0 4px 16px rgba(var(--fc-rgb, 229, 36, 45), 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35) !important;
+}
+
+body[data-theme="light"] .su-btn.primary:hover,
+body[data-theme="light"] .cm-btn-primary:hover,
+body[data-theme="light"] .fcn-m-btn.primary:hover,
+body[data-theme="light"] .su-ver-install-card button.go:not(.prev):hover,
+body[data-theme="light"] .su-mr-search .go:hover,
+body[data-theme="light"] .su-mr-item .ibtn:not(.installed):hover,
+body[data-theme="light"] .play-btn:hover {
+  filter: brightness(1.12) !important;
+  box-shadow: 0 6px 24px rgba(var(--fc-rgb, 229, 36, 45), 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Big Launch Button: Tactical Cockpit Trigger Module */
+body[data-theme="light"] .su-launch-wrap {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1.5px solid rgba(0, 0, 0, 0.12) !important;
+  border-radius: 12px !important;
+  padding: 5px !important;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.10), 0 0 0 1px rgba(var(--fc-rgb, 229, 36, 45), 0.22), inset 0 1px 0 #ffffff !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 2px !important;
+}
+
+body[data-theme="light"] .su-launch-btn {
+  background: linear-gradient(180deg, #ff4d4a 0%, #e5242d 52%, #b3141c 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.45) !important;
+  border-radius: 8px !important;
+  color: #ffffff !important;
+  min-width: 260px !important;
+  padding: 12px 48px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), inset 0 -2px 0 rgba(0, 0, 0, 0.25), 0 6px 20px rgba(var(--fc-rgb, 229, 36, 45), 0.42) !important;
+  transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+body[data-theme="light"] .su-launch-btn:hover:not([disabled]) {
+  filter: brightness(1.08) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), inset 0 -2px 0 rgba(0, 0, 0, 0.25), 0 10px 28px rgba(var(--fc-rgb, 229, 36, 45), 0.55) !important;
+}
+
+body[data-theme="light"] .su-launch-btn:active:not([disabled]) {
+  transform: translateY(1px) !important;
+  filter: brightness(0.96) !important;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3), 0 3px 10px rgba(var(--fc-rgb, 229, 36, 45), 0.35) !important;
+}
+
+body[data-theme="light"] .su-launch-btn .label {
+  font-family: var(--fc-display), 'Barlow', system-ui, sans-serif !important;
+  font-size: 20px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.14em !important;
+  color: #ffffff !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45) !important;
+}
+
+body[data-theme="light"] .su-launch-btn .ver {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+
+body[data-theme="light"] .su-launch-drop {
+  background: #f1f5f9 !important;
+  border: 1px solid rgba(0, 0, 0, 0.10) !important;
+  border-radius: 8px !important;
+  width: 40px !important;
+  height: 48px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #334155 !important;
+  transition: all 0.15s ease !important;
+  cursor: pointer !important;
+}
+
+body[data-theme="light"] .su-launch-drop:hover {
+  background: rgba(var(--fc-rgb, 229, 36, 45), 0.12) !important;
+  border-color: var(--fc-a, #e5242d) !important;
+  color: var(--fc-a, #e5242d) !important;
+}
+
+body[data-theme="light"] .su-launch-drop svg {
+  width: 14px !important;
+  height: 14px !important;
+  stroke: currentColor !important;
+}
+
+/* Segmented & chip buttons */
+body[data-theme="light"] .su-mr-chip,
+body[data-theme="light"] .fc-seg-btn,
+body[data-theme="light"] .su-seg button,
+body[data-theme="light"] .fc3-seg button,
+body[data-theme="light"] .fc-chip,
+body[data-theme="light"] .fc-im-chip,
+body[data-theme="light"] .su-skin-variant-seg button {
+  background: #f1f5f9 !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  color: #334155 !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+
+body[data-theme="light"] .su-mr-chip:hover,
+body[data-theme="light"] .su-seg button:hover,
+body[data-theme="light"] .fc3-seg button:hover,
+body[data-theme="light"] .fc-chip:hover,
+body[data-theme="light"] .su-skin-variant-seg button:hover {
+  background: rgba(var(--fc-rgb, 229, 36, 45), 0.10) !important;
+  border-color: rgba(var(--fc-rgb, 229, 36, 45), 0.5) !important;
+  color: var(--fc-a, #e5242d) !important;
+}
+
+body[data-theme="light"] .su-mr-chip.on,
+body[data-theme="light"] .su-seg button.on,
+body[data-theme="light"] .fc3-seg button.on,
+body[data-theme="light"] .fc-chip.active,
+body[data-theme="light"] .su-skin-variant-seg button.on {
+  background: linear-gradient(135deg, var(--fc-a2, #ff4d4a) 0%, var(--fc-a, #e5242d) 100%) !important;
+  border-color: var(--fc-a, #e5242d) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 10px rgba(var(--fc-rgb, 229, 36, 45), 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Installed mod badge button */
+body[data-theme="light"] .su-mr-item .ibtn.installed,
+body[data-theme="light"] .su-pack-card .ibtn.installed,
+body[data-theme="light"] .ibtn.installed {
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.14) 0%, rgba(5, 150, 105, 0.10) 100%) !important;
+  border: 1.5px solid rgba(16, 185, 129, 0.75) !important;
+  color: #059669 !important;
+  font-weight: 800 !important;
+  box-shadow: 0 1px 6px rgba(16, 185, 129, 0.2) !important;
+}
+
+/* ==========================================================================
+   7. INPUTS, SEARCH BARS & SELECTORS
+   ========================================================================== */
+body[data-theme="light"] .su-input,
+body[data-theme="light"] .su-select,
+body[data-theme="light"] select.fc-im-sel,
+body[data-theme="light"] .fc-set-search .su-input,
+body[data-theme="light"] .su-mr-search input,
+body[data-theme="light"] .fc-filter-search-input,
+body[data-theme="light"] .fc-plugin-search-input {
+  background: #ffffff !important;
+  border: 1.5px solid rgba(0, 0, 0, 0.14) !important;
+  color: #0f172a !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+
+body[data-theme="light"] .su-input::placeholder,
+body[data-theme="light"] input::placeholder {
+  color: #94a3b8 !important;
+}
+
+body[data-theme="light"] .su-input:focus,
+body[data-theme="light"] .su-select:focus,
+body[data-theme="light"] select.fc-im-sel:focus {
+  border-color: var(--fc-a, #e5242d) !important;
+  box-shadow: 0 0 0 3px rgba(var(--fc-rgb, 229, 36, 45), 0.15) !important;
+  outline: none !important;
+}
+
+/* ==========================================================================
+   8. SKINS & CAPES PAGE (Matches Uploaded Screenshot)
+   ========================================================================== */
+body[data-theme="light"] .su-skin-editor {
+  color: #0f172a !important;
+}
+
+body[data-theme="light"] .su-skin-preview {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+  border: 1.5px solid rgba(0, 0, 0, 0.10) !important;
+  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.08) !important;
+  border-radius: 12px !important;
+}
+
+body[data-theme="light"] .skin-preview-hint {
+  color: #64748b !important;
+}
+
+body[data-theme="light"] .su-skin-catalog {
+  background: #f8fafc !important;
+  border: 1px dashed rgba(0, 0, 0, 0.14) !important;
+}
+
+body[data-theme="light"] .su-skin-catalog > div {
+  color: #64748b !important;
+}
+
+/* Theme selector in settings / skins */
+body[data-theme="light"] #su-theme-seg button {
+  background: #f1f5f9 !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  color: #334155 !important;
+  font-weight: 700 !important;
+}
+
+body[data-theme="light"] #su-theme-seg button svg {
+  color: #64748b !important;
+  stroke: #64748b !important;
+}
+
+body[data-theme="light"] #su-theme-seg button:hover {
+  background: rgba(var(--fc-rgb, 229, 36, 45), 0.10) !important;
+  color: var(--fc-a, #e5242d) !important;
+}
+
+body[data-theme="light"] #su-theme-seg button:hover svg {
+  color: var(--fc-a, #e5242d) !important;
+  stroke: var(--fc-a, #e5242d) !important;
+}
+
+body[data-theme="light"] #su-theme-seg button.on {
+  background: linear-gradient(135deg, var(--fc-a2, #ff4d4a) 0%, var(--fc-a, #e5242d) 100%) !important;
+  border-color: var(--fc-a, #e5242d) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 10px rgba(var(--fc-rgb, 229, 36, 45), 0.35) !important;
+}
+
+body[data-theme="light"] #su-theme-seg button.on svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+/* ==========================================================================
+   9. HOME RAIL (NEWS) & HOME STRIP
+   ========================================================================== */
+body[data-theme="light"] .su-right {
+  background: #ffffff !important;
+  border-left: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: -2px 0 12px rgba(15, 23, 42, 0.03) !important;
+}
+
+body[data-theme="light"] .su-side-head .side-title {
+  color: #0f172a !important;
+}
+
+body[data-theme="light"] .su-side-head .side-eyebrow {
+  color: var(--fc-a, #e5242d) !important;
+}
+
+body[data-theme="light"] .fcn-feature {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.10) !important;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04) !important;
+}
+
+body[data-theme="light"] .fcn-feature:hover {
+  border-color: rgba(var(--fc-rgb, 229, 36, 45), 0.75) !important;
+}
+
+body[data-theme="light"] .fcn-title {
+  color: #0f172a !important;
+}
+
+body[data-theme="light"] .fcn-sum {
+  color: #475569 !important;
+}
+
+body[data-theme="light"] .fcn-date {
+  color: #64748b !important;
+}
+
+body[data-theme="light"] .fcn-list {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.09) !important;
+}
+
+body[data-theme="light"] .fcn-item {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+body[data-theme="light"] .fcn-item b {
+  color: #0f172a !important;
+}
+
+body[data-theme="light"] .fcn-item small {
+  color: #64748b !important;
+}
+
+body[data-theme="light"] .fcn-item:hover {
+  background: rgba(var(--fc-rgb, 229, 36, 45), 0.06) !important;
+}
+
+/* Home Hero: Player ID, Cyber Halo Pedestal & Tactical Strip */
+body[data-theme="light"] .su-home-hero {
+  position: relative !important;
+}
+
+body[data-theme="light"] .su-hero-name {
+  font-family: var(--fc-display), 'Barlow', system-ui, sans-serif !important;
+  font-size: 46px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.06em !important;
+  color: #0f172a !important;
+  text-shadow: 0 1px 0 #ffffff, 0 3px 12px rgba(15, 23, 42, 0.08) !important;
+  margin: 6px 0 2px !important;
+}
+
+body[data-theme="light"] .su-hero-name .sub {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 3px 12px !important;
+  border-radius: 999px !important;
+  background: rgba(34, 197, 94, 0.12) !important;
+  border: 1px solid rgba(34, 197, 94, 0.35) !important;
+  color: #16a34a !important;
+  font-family: var(--fc-display), 'Barlow', system-ui, sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.16em !important;
+  text-transform: uppercase !important;
+}
+
+body[data-theme="light"] .su-hero-name .sub::before {
+  content: "" !important;
+  width: 6px !important;
+  height: 6px !important;
+  border-radius: 50% !important;
+  background: #22c55e !important;
+  box-shadow: 0 0 8px #22c55e !important;
+}
+
+body[data-theme="light"] .su-hero-skin-wrap {
+  position: relative !important;
+}
+
+body[data-theme="light"] .su-hero-skin-wrap::after {
+  content: "" !important;
+  position: absolute !important;
+  bottom: -6px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: 140px !important;
+  height: 22px !important;
+  background: radial-gradient(ellipse at center, rgba(15, 23, 42, 0.20) 0%, rgba(229, 36, 45, 0.14) 40%, transparent 70%) !important;
+  border-radius: 50% !important;
+  z-index: 0 !important;
+  pointer-events: none !important;
+}
+
+body[data-theme="light"] .su-hero-skin {
+  position: relative !important;
+  z-index: 1 !important;
+  filter: drop-shadow(0 8px 18px rgba(15, 23, 42, 0.14)) !important;
+}
+
+/* Tactical Telemetry Strip */
+body[data-theme="light"] .fc-strip {
+  background: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(16px) !important;
+  border: 1.5px solid rgba(0, 0, 0, 0.10) !important;
+  border-top: 3px solid var(--fc-a, #e5242d) !important;
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.08), inset 0 1px 0 #ffffff !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+body[data-theme="light"] .fc-strip > div {
+  border-left: 1px solid rgba(0, 0, 0, 0.08) !important;
+  padding: 8px 14px !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 250, 252, 0.9) 100%) !important;
+  transition: background 0.16s ease !important;
+}
+
+body[data-theme="light"] .fc-strip > div:hover {
+  background: #ffffff !important;
+}
+
+body[data-theme="light"] .fc-strip small {
+  font-family: var(--fc-display), 'Barlow', system-ui, sans-serif !important;
+  font-size: 9.5px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+  color: #64748b !important;
+}
+
+body[data-theme="light"] .fc-strip b {
+  font-family: var(--fc-display), 'Barlow', system-ui, sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  color: #0f172a !important;
+  letter-spacing: 0.02em !important;
+}
+
+body[data-theme="light"] .fc-strip .fc-ping-pill {
+  background: rgba(34, 197, 94, 0.12) !important;
+  border: 1px solid rgba(34, 197, 94, 0.35) !important;
+  color: #16a34a !important;
+  font-weight: 800 !important;
+  border-radius: 999px !important;
+}
+
+/* Tactical Discord Community Card in Home Rail */
+body[data-theme="light"] .fc-dc {
+  background: #ffffff !important;
+  border: 1.5px solid rgba(0, 0, 0, 0.10) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06), inset 0 1px 0 #ffffff !important;
+  clip-path: none !important;
+}
+
+body[data-theme="light"] .fc-dc-ic {
+  background: linear-gradient(135deg, rgba(var(--fc-rgb, 229, 36, 45), 0.15), rgba(var(--fc-rgb, 229, 36, 45), 0.05)) !important;
+  border: 1px solid rgba(var(--fc-rgb, 229, 36, 45), 0.35) !important;
+  border-radius: 12px !important;
+  color: var(--fc-a, #e5242d) !important;
+}
+
+body[data-theme="light"] .fc-dc-name {
+  color: #0f172a !important;
+  font-weight: 800 !important;
+}
+
+body[data-theme="light"] .fc-dc-live {
+  color: #16a34a !important;
+  font-weight: 800 !important;
+}
+
+body[data-theme="light"] .fc-dc-nums b {
+  color: #0f172a !important;
+  font-weight: 800 !important;
+}
+
+body[data-theme="light"] .fc-dc-nums b.g {
+  color: #16a34a !important;
+}
+
+body[data-theme="light"] .fc-dc-nums small {
+  color: #64748b !important;
+  font-weight: 800 !important;
+}
+
+body[data-theme="light"] .fc-dc-bar {
+  background: #e2e8f0 !important;
+  border-radius: 999px !important;
+}
+
+body[data-theme="light"] .fc-dc-btn {
+  background: linear-gradient(135deg, var(--fc-a2, #ff4d4a) 0%, var(--fc-a, #e5242d) 100%) !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  border-radius: 8px !important;
+  clip-path: none !important;
+  box-shadow: 0 4px 14px rgba(var(--fc-rgb, 229, 36, 45), 0.35) !important;
+  transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+body[data-theme="light"] .fc-dc-btn:hover {
+  filter: brightness(1.1) !important;
+  box-shadow: 0 6px 20px rgba(var(--fc-rgb, 229, 36, 45), 0.5) !important;
+  transform: translateY(-1px) !important;
+}
+
+body[data-theme="light"] .fc-dc-in {
+  background: #f8fafc !important;
+  border: 1.5px solid rgba(0, 0, 0, 0.14) !important;
+  color: #0f172a !important;
+}
+
+body[data-theme="light"] .fc-dc-in::placeholder {
+  color: #94a3b8 !important;
+}
+
+body[data-theme="light"] .fc-dc-msg {
+  color: #475569 !important;
+}
+
+/* ==========================================================================
+   10. VERSION SELECTION STRIP & CARDS
+   ========================================================================== */
+body[data-theme="light"] .fc-sel {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.10) !important;
+  border-left: 4px solid var(--fc-a, #e5242d) !important;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06) !important;
+}
+
+body[data-theme="light"] .fc-sel-eyebrow {
+  color: var(--fc-a, #e5242d) !important;
+}
+
+body[data-theme="light"] .fc-sel-name {
+  color: #0f172a !important;
+}
+
+body[data-theme="light"] .fc-sel-empty {
+  color: #64748b !important;
+}
+
+body[data-theme="light"] .su-ver-row .n .name .display {
+  color: #0f172a !important;
+}
+
+body[data-theme="light"] .su-ver-row .sub {
+  color: #64748b !important;
+}
+
+body[data-theme="light"] .su-ver-row .fc-meta {
+  color: #64748b !important;
+}
+
+/* ==========================================================================
+   11. PROFILES & ACCOUNTS PAGE
+   ========================================================================== */
+body[data-theme="light"] .fc-prof {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.10) !important;
+  border-left: 4px solid var(--fc-a, #e5242d) !important;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06) !important;
+}
+
+body[data-theme="light"] .fc-prof-stage {
+  background: linear-gradient(180deg, rgba(var(--fc-rgb, 229, 36, 45), 0.08), rgba(241, 245, 249, 0.7) 70%),
+              repeating-conic-gradient(rgba(0, 0, 0, 0.02) 0 25%, transparent 0 50%) 0 0/20px 20px !important;
+  border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+body[data-theme="light"] .fc-prof-stage::after {
+  background: #e2e8f0 !important;
+  border-top: 2px solid var(--fc-a, #e5242d) !important;
+}
+
+body[data-theme="light"] .fc-prof-name {
+  color: #0f172a !important;
+}
+
+body[data-theme="light"] .fc-prof-stats .fc-stat {
+  background: #f8fafc !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+body[data-theme="light"] .fc-stat small {
+  color: #64748b !important;
+}
+
+body[data-theme="light"] .fc-stat b {
+  color: #0f172a !important;
+}
+
+body[data-theme="light"] .fc-uuid {
+  color: #64748b !important;
+}
+
+/* ==========================================================================
+   12. POPUPS, DROPDOWNS & MODALS
+   ========================================================================== */
+body[data-theme="light"] .su-pop,
+body[data-theme="light"] .su-launch-drop,
+body[data-theme="light"] .play-ver-dropdown,
+body[data-theme="light"] #su-launch-pop-inst,
+body[data-theme="light"] #su-tb-pop-inst,
+body[data-theme="light"] #su-tb-pop-acct,
+body[data-theme="light"] #su-tb-pop-theme,
+body[data-theme="light"] #su-tb-pop-lang,
+body[data-theme="light"] .fc-dropdown {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  box-shadow: 0 16px 48px rgba(15, 23, 42, 0.14) !important;
+  color: #0f172a !important;
+}
+
+body[data-theme="light"] .su-pop-item,
+body[data-theme="light"] .su-launch-item,
+body[data-theme="light"] .su-pop button {
+  color: #1e293b !important;
+}
+
+body[data-theme="light"] .su-pop-item:hover,
+body[data-theme="light"] .su-launch-item:hover,
+body[data-theme="light"] .su-pop button:hover {
+  background: #f1f5f9 !important;
+  color: var(--fc-a, #e5242d) !important;
+}
+
+body[data-theme="light"] .fcn-modal,
+body[data-theme="light"] #create-modal,
+body[data-theme="light"] #add-acct-modal,
+body[data-theme="light"] .modal-backdrop {
+  background: rgba(15, 23, 42, 0.55) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+body[data-theme="light"] .fcn-m-card,
+body[data-theme="light"] .cm-box,
+body[data-theme="light"] .aam-box,
+body[data-theme="light"] .dialog-box,
+body[data-theme="light"] .su-modal,
+body[data-theme="light"] #install-modal .modal-content,
+body[data-theme="light"] .modal-content {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.18) !important;
+  color: #0f172a !important;
+}
+
+body[data-theme="light"] .fcn-m-x {
+  background: #f1f5f9 !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  color: #475569 !important;
+}
+
+body[data-theme="light"] .fcn-m-x:hover {
+  background: var(--fc-a, #e5242d) !important;
+  color: #ffffff !important;
+}
+
+body[data-theme="light"] .fcn-m-title,
+body[data-theme="light"] .su-modal-title,
+body[data-theme="light"] .dialog-title {
+  color: #0f172a !important;
+}
+
+body[data-theme="light"] .fcn-m-text {
+  color: #334155 !important;
+}
+
+/* ==========================================================================
+   13. SETTINGS CONTROLS, TOGGLES & RAM SLIDER
+   ========================================================================== */
+body[data-theme="light"] .su-toggle span,
+body[data-theme="light"] .su-switch {
+  background: #cbd5e1 !important;
+  border: 1px solid rgba(0, 0, 0, 0.14) !important;
+}
+
+body[data-theme="light"] .su-toggle span::before,
+body[data-theme="light"] .su-switch::after {
+  background: #ffffff !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25) !important;
+}
+
+body[data-theme="light"] .su-toggle input:checked + span,
+body[data-theme="light"] .su-switch.on {
+  background: linear-gradient(135deg, var(--fc-a2, #ff4d4a) 0%, var(--fc-a, #e5242d) 100%) !important;
+  border-color: var(--fc-a, #e5242d) !important;
+  box-shadow: 0 0 12px rgba(var(--fc-rgb, 229, 36, 45), 0.35) !important;
+}
+
+body[data-theme="light"] .su-toggle input:checked + span::before,
+body[data-theme="light"] .su-switch.on::after {
+  background: #ffffff !important;
+}
+
+body[data-theme="light"] input[type="range"],
+body[data-theme="light"] .su-range {
+  accent-color: var(--fc-a, #e5242d) !important;
+  background: #e2e8f0 !important;
+}
+
+body[data-theme="light"] #su-ram-custom-mb {
+  color: #0f172a !important;
+}
+
+body[data-theme="light"] .su-settings-nav {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(0, 0, 0, 0.10) !important;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04) !important;
+}
+
+body[data-theme="light"] .su-settings-nav a {
+  color: #475569 !important;
+}
+
+body[data-theme="light"] .su-settings-nav a:hover {
+  background: #f1f5f9 !important;
+  color: var(--fc-a, #e5242d) !important;
+}
+
+body[data-theme="light"] .su-accent-dot {
+  border-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+body[data-theme="light"] .su-accent-dot.active {
+  border-color: #0f172a !important;
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #0f172a !important;
+}
+
+/* ==========================================================================
+   14. CONSOLE LOGS & HOST SERVER TERMINAL
+   ========================================================================== */
+body[data-theme="light"] .fc-console-toolbar,
+body[data-theme="light"] .fc-console-state {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.10) !important;
+  color: #0f172a !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+}
+
+body[data-theme="light"] .fc-console-state .fc-live-st {
+  color: #0f172a !important;
+}
+
+body[data-theme="light"] .fc-con-scroll,
+body[data-theme="light"] .fc-con-pref {
+  color: #475569 !important;
+}
+
+body[data-theme="light"] .su-console-log {
+  background: #090d16 !important;
+  color: #f1f5f9 !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+}
+
+body[data-theme="light"] .su-host-cmd-bar {
+  background: #ffffff !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.10) !important;
+}
+
+body[data-theme="light"] #su-host-cmd {
+  background: #f8fafc !important;
+  border: 1.5px solid rgba(0, 0, 0, 0.14) !important;
+  color: #0f172a !important;
+}
+
+/* ==========================================================================
+   15. USAGE, KPIS & ANALYTICS
+   ========================================================================== */
+body[data-theme="light"] .su-kpi-card {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.10) !important;
+  border-left: 3px solid var(--fc-a, #e5242d) !important;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04) !important;
+}
+
+body[data-theme="light"] .su-kpi-ic {
+  background: rgba(var(--fc-rgb, 229, 36, 45), 0.10) !important;
+  color: var(--fc-a, #e5242d) !important;
+}
+
+body[data-theme="light"] .su-kpi-ic svg {
+  color: var(--fc-a, #e5242d) !important;
+  stroke: var(--fc-a, #e5242d) !important;
+}
+
+body[data-theme="light"] .su-kpi-label {
+  color: #64748b !important;
+}
+
+body[data-theme="light"] .su-kpi-val {
+  color: #0f172a !important;
+}
+
+body[data-theme="light"] .su-bars {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.10) !important;
+}
+
+body[data-theme="light"] .su-bar-fill {
+  background: linear-gradient(180deg, var(--fc-a2, #ff4d4a), var(--fc-a, #e5242d)) !important;
+}
+
+/* ==========================================================================
+   16. SCROLLBARS IN LIGHT MODE
+   ========================================================================== */
+body[data-theme="light"] * {
+  scrollbar-color: rgba(15, 23, 42, 0.22) transparent !important;
+}
+
+body[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.20) !important;
+  border-radius: 6px !important;
+}
+
+body[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(15, 23, 42, 0.35) !important;
+}
+
+body[data-theme="light"] ::-webkit-scrollbar-track {
+  background: transparent !important;
+}

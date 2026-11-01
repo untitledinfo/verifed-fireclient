@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#17191f"/>
+      <stop offset="1" stop-color="#090a0e"/>
+    </linearGradient>
+    <radialGradient id="ember" cx="57%" cy="43%" r="58%">
+      <stop offset="0" stop-color="#c62734" stop-opacity=".42"/>
+      <stop offset="1" stop-color="#c62734" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="mark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff7167"/>
+      <stop offset=".55" stop-color="#f33d43"/>
+      <stop offset="1" stop-color="#c51e2b"/>
+    </linearGradient>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="9"/>
+    </filter>
+  </defs>
+  <rect x="4" y="4" width="248" height="248" rx="52" fill="url(#tile)"/>
+  <rect x="4" y="4" width="248" height="248" rx="52" fill="url(#ember)"/>
+  <path d="M56 216V40h114l38-36-10 80h-98v36h50l28-24-10 64h-68v56z" fill="#f13542" opacity=".42" filter="url(#soft)"/>
+  <path d="M56 216V40h114l38-36-10 80h-98v36h50l28-24-10 64h-68v56z" fill="url(#mark)"/>
+  <path d="M56 40h114l-11 11H67v24H56z" fill="#ffaaa0" opacity=".25"/>
+  <path d="m176 198 34-34-5 28-34 33h-10z" fill="#ff7566" opacity=".8"/>
+  <path d="m185 224 25-25-3 19-24 23h-8z" fill="#f75a50" opacity=".48"/>
+  <rect x="4.75" y="4.75" width="246.5" height="246.5" rx="51.25" fill="none" stroke="#fff" stroke-opacity=".09" stroke-width="1.5"/>
+</svg>

@@ -1,13 +1,13 @@
-name: Sign FireClient Setup and Publish
+name: Sign & Build FireClient Multi-Platform Release
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version, for example 1.2.3'
+        description: 'Release version, for example 2.2.7'
         required: true
         type: string
-        default: '1.0.0'
+        default: '2.2.7'
   push:
     tags:
       - 'v*'
@@ -16,14 +16,18 @@ permissions:
   contents: write
 
 jobs:
-  sign-and-release:
+  sign-windows:
     runs-on: windows-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
+    outputs:
+      release_version: ${{ steps.ver.outputs.version }}
+      release_tag: ${{ steps.ver.outputs.tag }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
       - name: Select and validate release version
+        id: ver
         shell: pwsh
         env:
           INPUT_VERSION: ${{ inputs.version }}
@@ -32,13 +36,17 @@ jobs:
         run: |
           if ($env:REF_TYPE -eq 'tag') {
             $version = $env:REF_NAME -replace '^v', ''
+            $tag = $env:REF_NAME
           } else {
             $version = $env:INPUT_VERSION
+            $tag = "v$version"
           }
           if ($version -notmatch '^\d+\.\d+\.\d+([+-][0-9A-Za-z.-]+)?$') {
-            throw "Invalid version '$version'. Use a version like 1.2.3 or 1.2.3-rc.1."
+            throw "Invalid version '$version'. Use a version like 2.2.7 or 2.2.8-rc.1."
           }
           "RELEASE_VERSION=$version" >> $env:GITHUB_ENV
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "tag=$tag" >> $env:GITHUB_OUTPUT
 
       - name: Validate PowerShell script syntax
         shell: pwsh
@@ -48,7 +56,8 @@ jobs:
             (Join-Path $PWD 'scripts/Verify-Windows-Release.ps1'),
             (Join-Path $PWD 'scripts/Inspect-Release-Security.ps1'),
             (Join-Path $PWD 'scripts/Install-Local-Publisher-Trust.ps1'),
-            (Join-Path $PWD 'scripts/Uninstall-Local-Publisher-Trust.ps1')
+            (Join-Path $PWD 'scripts/Uninstall-Local-Publisher-Trust.ps1'),
+            (Join-Path $PWD 'scripts/install-windows.ps1')
           )
           foreach ($file in $files) {
             if (-not (Test-Path -LiteralPath $file)) { continue }
@@ -67,7 +76,6 @@ jobs:
         env:
           WINDOWS_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_CERTIFICATE_BASE64 }}
           WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
-          # TEST RELEASES ONLY: never presents the self-signed cert as trusted.
           ALLOW_UNTRUSTED_SELF_SIGNED_CERTIFICATE: 'true'
           EXPECTED_SIGNING_CERT_THUMBPRINT: '91CECD221349B375AF5CBE1FC138015705C9FBC7, BDF35D4B69863EB70590708C44D11E18C12AF2C5, ${{ vars.EXPECTED_SIGNING_CERT_THUMBPRINT }}'
         run: ./scripts/Sign-And-Generate-Yml.ps1
@@ -79,12 +87,14 @@ jobs:
           EXPECTED_SIGNING_CERT_THUMBPRINT: '91CECD221349B375AF5CBE1FC138015705C9FBC7, BDF35D4B69863EB70590708C44D11E18C12AF2C5, ${{ vars.EXPECTED_SIGNING_CERT_THUMBPRINT }}'
         run: ./scripts/Verify-Windows-Release.ps1
 
-      - name: Upload release files as workflow artifacts
+      - name: Upload Windows release artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: FireClient-release-${{ env.RELEASE_VERSION }}
+          name: FireClient-Windows
           path: |
             dist/FireClient-Setup.exe
+            dist/FireClient-Setup.exe.sha256
+            dist/FireClient-portable.zip
             dist/latest.yml
             dist/verification-report.json
             dist/security-summary.md
@@ -93,17 +103,134 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Publish GitHub release
+  build-macos:
+    runs-on: macos-latest
+    needs: sign-windows
+    timeout-minutes: 30
+    env:
+      CSC_LINK: ${{ secrets.MACOS_CERTIFICATE_BASE64 }}
+      CSC_KEY_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build macOS Universal, Apple Silicon (arm64) & Intel (x64) DMG + ZIP
+        working-directory: desktop
+        run: |
+          if [ -z "$CSC_LINK" ]; then
+            export CSC_IDENTITY_AUTO_DISCOVERY=false
+          fi
+          npm pkg set version="${{ needs.sign-windows.outputs.release_version }}"
+          npm install --no-audit --no-fund
+          npx electron-builder --mac dmg zip --universal --arm64 --x64 --publish never
+
+      - name: Collect macOS packages & SHA-256 digests
+        run: |
+          mkdir -p out-macos
+          cp desktop/dist/FireClient-macOS-*.dmg out-macos/
+          cp desktop/dist/FireClient-macOS-*.zip out-macos/ || true
+          cp scripts/install-macos.sh out-macos/
+          (cd out-macos && shasum -a 256 FireClient-macOS-* > SHA256SUMS-macos.txt)
+          cat out-macos/SHA256SUMS-macos.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FireClient-macOS
+          path: |
+            out-macos/FireClient-macOS-*
+            out-macos/install-macos.sh
+            out-macos/SHA256SUMS-macos.txt
+          retention-days: 30
+
+  build-linux:
+    runs-on: ubuntu-latest
+    needs: sign-windows
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Linux packaging tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rpm fakeroot dpkg libfuse2
+
+      - name: Build Linux AppImage, Debian/Ubuntu (.deb), and Tarball (.tar.gz)
+        working-directory: desktop
+        run: |
+          npm pkg set version="${{ needs.sign-windows.outputs.release_version }}"
+          npm install --no-audit --no-fund
+          npx electron-builder --linux AppImage deb tar.gz --x64 --publish never
+
+      - name: Normalize Linux packages & generate SHA-256 digests
+        run: |
+          mkdir -p out-linux
+          for f in desktop/dist/FireClient-Linux-*; do
+            [ -f "$f" ] || continue
+            cp "$f" out-linux/
+          done
+          if [ -f out-linux/FireClient-Linux-x64.AppImage ]; then
+            cp out-linux/FireClient-Linux-x64.AppImage out-linux/FireClient-Linux-x86_64.AppImage
+          fi
+          if [ -f out-linux/FireClient-Linux-x64.deb ]; then
+            mv out-linux/FireClient-Linux-x64.deb out-linux/FireClient-Linux-amd64.deb
+          fi
+          if [ -f out-linux/FireClient-Linux-x64.tar.gz ]; then
+            mv out-linux/FireClient-Linux-x64.tar.gz out-linux/FireClient-Linux-x86_64.tar.gz
+          fi
+          cp scripts/install-linux.sh out-linux/
+          (cd out-linux && sha256sum FireClient-Linux-* > SHA256SUMS-linux.txt)
+          cat out-linux/SHA256SUMS-linux.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FireClient-Linux
+          path: |
+            out-linux/FireClient-Linux-*
+            out-linux/install-linux.sh
+            out-linux/SHA256SUMS-linux.txt
+          retention-days: 30
+
+  publish-release:
+    runs-on: ubuntu-latest
+    needs: [sign-windows, build-macos, build-linux]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: FireClient-Windows
+          path: pub-win
+      - uses: actions/download-artifact@v4
+        with:
+          name: FireClient-macOS
+          path: pub-mac
+      - uses: actions/download-artifact@v4
+        with:
+          name: FireClient-Linux
+          path: pub-linux
+
+      - name: Merge unified cross-platform SHA256SUMS.txt
+        run: |
+          mkdir -p publish-bundle
+          cp pub-win/* publish-bundle/
+          cp pub-mac/FireClient-macOS-* publish-bundle/
+          cp pub-mac/install-macos.sh publish-bundle/
+          cp pub-linux/FireClient-Linux-* publish-bundle/
+          cp pub-linux/install-linux.sh publish-bundle/
+          cp scripts/install-windows.ps1 publish-bundle/
+          cat pub-win/SHA256SUMS.txt pub-mac/SHA256SUMS-macos.txt pub-linux/SHA256SUMS-linux.txt > publish-bundle/SHA256SUMS.txt
+          cat publish-bundle/SHA256SUMS.txt
+
+      - name: Publish Multi-Platform GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', inputs.version) }}
-          name: FireClient ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', inputs.version) }}
+          tag_name: ${{ needs.sign-windows.outputs.release_tag }}
+          name: FireClient ${{ needs.sign-windows.outputs.release_tag }}
           generate_release_notes: true
           make_latest: true
           files: |
-            dist/FireClient-Setup.exe
-            dist/latest.yml
-            dist/verification-report.json
-            dist/security-summary.md
-            dist/SHA256SUMS.txt
-            dist/SHA512SUMS.txt
+            publish-bundle/*
