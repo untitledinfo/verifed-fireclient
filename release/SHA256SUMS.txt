@@ -1,3 +1,3 @@
-60e46a578f4e6755da82474bda859034fdbf3bc0a788b70d40808fbcd2c17e80 *FireClient-Setup.exe
-41ab1f832d6b37d7d27957b53c8b16e96768d23a2064bc41bd7fac1e2c254883 *FireClient-portable.zip
+a1b91ad5787e877c70cc1119043bc20d5c3f0692f2088a808dce462c0a398e01 *FireClient-Setup.exe
+68b68d724f761cc2057d40702a709d568df45954d5dc615fa8fc2d25ffb03add *FireClient-portable.zip
 
