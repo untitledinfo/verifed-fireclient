@@ -1,5 +1,8 @@
 # Local outputs and private signing material
 dist/
+# Generated release installers belong in GitHub Releases, not Git history.
+/release/*.AppImage
+/release/*.dmg
 *.pfx
 *.p12
 *.pem
