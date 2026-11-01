@@ -1,6 +1,6 @@
 # FireClient Multi-Platform Release & Security Suite
 
-Official verified release feed, Authenticode signing pipeline, cross-platform desktop packaging, and one-line installers for **FireClient** across **Windows 10/11**, **macOS 12+ (Apple Silicon & Intel)**, and **Linux (`x86_64` & `arm64`)**.
+Official verified release feed, Authenticode signing pipeline, cross-platform desktop packaging, and one-line installers for **FireClient** across **Windows 10/11**, **macOS 12+ (Apple Silicon & Intel)**, and **Linux (`x86_64`)**.
 
 ---
 
@@ -29,13 +29,11 @@ curl -fsSL https://raw.githubusercontent.com/untitledinfo/verifed-fireclient/mai
 |---|---|---|---|
 | **Windows** | `FireClient-Setup.exe` | `x64` | Authenticode-signed NSIS installer (`asInvoker`, installs to `%LocalAppData%\Programs\FireClient`) |
 | **Windows** | `FireClient-portable.zip` | `x64` | Zero-install portable Windows bundle |
-| **macOS** | `FireClient-macOS-universal.dmg` | Universal (`arm64` + `x64`) | Native Apple Silicon & Intel disk image |
-| **macOS** | `FireClient-macOS-arm64.dmg` / `FireClient-macOS-x64.dmg` | `arm64` / `x64` | Dedicated architecture disk images + `.zip` archives |
-| **Linux** | `FireClient-Linux-x86_64.AppImage` | `x86_64` | Universal portable AppImage (`chmod +x` and run) |
-| **Linux** | `FireClient-Linux-amd64.deb` | `amd64` | Native Debian / Ubuntu / Linux Mint package |
-| **Linux** | `FireClient-Linux-x86_64.tar.gz` | `x86_64` | Portable tarball for Arch, Fedora, NixOS, and custom setups |
+| **macOS** | `FireClient-macOS-universal.dmg` | Universal (`arm64` + `x64`) | Native Apple Silicon & Intel disk image, built and published by GitHub Actions |
+| **Linux** | `FireClient-Linux-x86_64.AppImage` | `x86_64` | Portable AppImage, built and published by GitHub Actions |
+| **Linux** | `FireClient-Linux-amd64.deb` | `amd64` | Debian / Ubuntu package, built and published by GitHub Actions |
 
-All published releases include **`SHA256SUMS.txt`**, **`SHA512SUMS.txt`**, **`FireClient-Setup.exe.sha256`**, and **`latest.yml`** for automatic cryptographic verification by the FireClient Updater.
+The macOS universal DMG supports both Apple Silicon and Intel. macOS and Linux installers are built by GitHub Actions and uploaded as release assets; they are not committed into the source tree. All published releases include **`SHA256SUMS.txt`**, **`SHA512SUMS.txt`**, **`FireClient-Setup.exe.sha256`**, and **`latest.yml`** for automatic cryptographic verification by the FireClient Updater.
 
 ---
 
@@ -61,14 +59,14 @@ All published releases include **`SHA256SUMS.txt`**, **`SHA512SUMS.txt`**, **`Fi
 
 | Path | Purpose |
 |---|---|
-| `.github/workflows/sign-release.yml` | Multi-platform CI/CD: signs & audits Windows `.exe`/`.zip`, builds macOS `.dmg`/`.zip` and Linux `.AppImage`/`.deb`/`.tar.gz`, merges `SHA256SUMS.txt`, and publishes GitHub Releases |
+| `.github/workflows/sign-release.yml` | Multi-platform CI/CD: signs & audits Windows `.exe`/`.zip`, builds a universal macOS `.dmg` and Linux `.AppImage`/`.deb`, merges `SHA256SUMS.txt`, and publishes GitHub Releases on version tags |
 | `desktop/` | Cross-platform macOS & Linux Electron Desktop Host (`main.js`, `preload.js`, `package.json`, `entitlements.mac.plist`) |
 | `web/` | Shared Launcher UI & Standalone Glassmorphic Multi-OS Updater (`updater.html`, `index.html`, `css/`, `js/`) |
 | `scripts/install-macos.sh` | Official 1-line macOS installer (DMG mount, `/Applications` or `~/Applications` copy, SHA-256 check, Gatekeeper quarantine cleanup) |
-| `scripts/install-linux.sh` | Official 1-line Linux installer (`.deb` / `.AppImage` / `.tar.gz`, SHA-256 check, desktop entry & `~/.local/bin/fireclient` symlink) |
+| `scripts/install-linux.sh` | Official 1-line Linux installer (`.deb` / `.AppImage`, SHA-256 check, desktop entry & `~/.local/bin/fireclient` symlink) |
 | `scripts/install-windows.ps1` | Official 1-line Windows PowerShell installer (SHA-256 check, Authenticode verification, silent `/S` upgrade) |
 | `scripts/Sign-And-Generate-Yml.ps1` | Signs `FireClient-Setup.exe`, stages `FireClient-portable.zip`, generates `latest.yml`, `FireClient-Setup.exe.sha256`, `SHA256SUMS.txt`, and `SHA512SUMS.txt` |
 | `scripts/Verify-Windows-Release.ps1` | Audits Authenticode publisher, UAC manifest, PE exploit mitigations, and Microsoft Defender scan |
 | `scripts/Inspect-Release-Security.ps1` | Standalone CLI inspector for any Windows binary's UAC, signature, and mitigation profile |
 | `scripts/Install-Local-Publisher-Trust.ps1` | Imports test publisher certificate into local Windows Trust Store (`Install-Publisher-Trust.cmd`) |
-| `release/` | Verified Windows release binaries (`FireClient-Setup.exe`, `FireClient-portable.zip`), checksums, and security report |
+| `release/` | Windows installer inputs for the signing workflow; macOS/Linux installers and generated release metadata stay out of source history and are attached to GitHub Releases by CI |

@@ -116,7 +116,7 @@ jobs:
         with:
           node-version: 20
 
-      - name: Build macOS Universal, Apple Silicon (arm64) & Intel (x64) DMG + ZIP
+      - name: Build macOS Universal DMG for Apple Silicon & Intel
         working-directory: desktop
         run: |
           # An empty CSC_LINK makes electron-builder resolve it to the cwd ('desktop not a file'), so unset it.
@@ -126,13 +126,12 @@ jobs:
           fi
           npm pkg set version="${{ needs.sign-windows.outputs.release_version }}"
           npm install --no-audit --no-fund
-          npx electron-builder --mac dmg zip --universal --arm64 --x64 --publish never
+          npx electron-builder --mac dmg --universal --publish never
 
       - name: Collect macOS packages & SHA-256 digests
         run: |
           mkdir -p out-macos
           cp desktop/dist/FireClient-macOS-*.dmg out-macos/
-          cp desktop/dist/FireClient-macOS-*.zip out-macos/ || true
           cp scripts/install-macos.sh out-macos/
           (cd out-macos && shasum -a 256 FireClient-macOS-* > SHA256SUMS-macos.txt)
           cat out-macos/SHA256SUMS-macos.txt
@@ -161,12 +160,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y rpm fakeroot dpkg libfuse2
 
-      - name: Build Linux AppImage, Debian/Ubuntu (.deb), and Tarball (.tar.gz)
+      - name: Build Linux AppImage and Debian/Ubuntu (.deb)
         working-directory: desktop
         run: |
           npm pkg set version="${{ needs.sign-windows.outputs.release_version }}"
           npm install --no-audit --no-fund
-          npx electron-builder --linux AppImage deb tar.gz --x64 --publish never
+          npx electron-builder --linux AppImage deb --x64 --publish never
 
       - name: Normalize Linux packages & generate SHA-256 digests
         run: |
@@ -180,9 +179,6 @@ jobs:
           fi
           if [ -f out-linux/FireClient-Linux-x64.deb ]; then
             mv out-linux/FireClient-Linux-x64.deb out-linux/FireClient-Linux-amd64.deb
-          fi
-          if [ -f out-linux/FireClient-Linux-x64.tar.gz ]; then
-            mv out-linux/FireClient-Linux-x64.tar.gz out-linux/FireClient-Linux-x86_64.tar.gz
           fi
           cp scripts/install-linux.sh out-linux/
           (cd out-linux && sha256sum FireClient-Linux-* > SHA256SUMS-linux.txt)

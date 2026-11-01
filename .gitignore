@@ -1,5 +1,13 @@
 # Local outputs and private signing material
 dist/
+# Generated macOS/Linux installers belong in GitHub Releases, not source history.
+/release/FireClient-Linux-*
+/release/FireClient-macOS-*
+/release/FireClient-Setup.exe.sha256
+/release/SHA256SUMS*.txt
+/release/SHA512SUMS.txt
+/release/install-linux.sh
+/release/install-macos.sh
 *.pfx
 *.p12
 *.pem
