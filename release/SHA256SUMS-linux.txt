@@ -1,0 +1,2 @@
+a4c5d9fdee0d3acd16b81e282638a246fd1588992f270b547fc6042d205bdd59  FireClient-Linux-amd64.deb
+caeba053b295a7c446d178a137ffd2372987ba9d645d8bcd6c1e548fea21caff  FireClient-Linux-x86_64.AppImage
